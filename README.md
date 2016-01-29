@@ -1,6 +1,11 @@
 JPEGDecoder
 ===========
 
+Tweaked to use the faster SdFat library instead of the SD library. This allows a bit-bashed SPI interface to an SD Card which can be convenient for example on pins 50, 51 and 52 of a Due (on Mega these are hardware SPI).
+
+Original Readme below:
+=====================
+
 JPEG Decoder for Arduino
 
 概要
