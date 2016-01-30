@@ -115,7 +115,8 @@ int JPEGDecoder::decode(char* pFilename, unsigned char pReduce){
     scanType = image_info.m_scanType;
     MCUWidth = image_info.m_MCUWidth;
     MCUHeight = image_info.m_MCUHeight;
-    
+    mcu_y = 0; // <<<<<< Added to correct bug
+
     return decode_mcu();
 }
 
