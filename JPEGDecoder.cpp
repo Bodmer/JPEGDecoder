@@ -5,8 +5,11 @@
  Public domain, Makoto Kurauchi <http://yushakobo.jp>
 */
 
-//#include <SD.h>
-#include <SdFat.h> 
+#ifdef __AVR__
+  #include <SD.h>
+#else
+  #include <SdFat.h>
+#endif
 
 #include "JPEGDecoder.h"
 #include "picojpeg.h"
