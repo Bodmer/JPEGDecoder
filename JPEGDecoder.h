@@ -10,7 +10,7 @@
 
 #include "picojpeg.h"
 
-// #define DEBUG
+//#define DEBUG
 
 //------------------------------------------------------------------------------
 #ifndef max
