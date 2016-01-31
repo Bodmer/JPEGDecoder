@@ -13,7 +13,7 @@ The decompression of Jpegs involves a lot of maths, so it takes a Due about ~1.3
 
 This library supports either the SD or SdFat libraries. The SdFat allows a bit-bashed SPI interface to an SD Card which can be convenient for example on pins 50, 51 and 52 of a Due (on Mega these are hardware SPI).
 
-The library has been tested with the 1.6.7 version of the Arduino IDE and may generate error messages at compile time on other versions because "#ifdef \_\_AVR\_\_" is used to distinguish bettwen the Mega and Due and select the correct libraries.
+The library has been tested with the 1.6.7 version of the Arduino IDE and may generate error messages at compile time on other versions because "#ifdef \_\_AVR\_\_" is used to distinguish between the Mega and Due and select the correct libraries.
 
 The library has been tested with 3.2" and 3.0" displays based on the HX8357B, HX8357C and ILI9481 driver chips with a 16 bit parallel interface.  Adapting the example sketch for other TFT drivers and their graphics libraries should be quite easy if they support either setWindow() or SetAddrWindow() and pushColor() functions as found in the Adafruit_GFX library.
 
