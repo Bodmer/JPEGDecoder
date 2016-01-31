@@ -1,4 +1,4 @@
-JPEGDecoder
+Arduino JPEGDecoder library
 ===========
 
 This library supports the rendering of Jpeg files stored on SD card and in arrays within program memory (FLASH). Typically a 480x320 image can be compressed without much degradation to less than 32KBytes, as a 24 bit BMP that image would occupy 461KBytes.
