@@ -51,7 +51,11 @@ unsigned char JPEGDecoder::pjpeg_need_bytes_callback(unsigned char* pBuf, unsign
     n = min(g_nInFileSize - g_nInFileOfs, buf_size);
 
     if (array_jpg) for (int i = 0; i < n; i++) {
-      pBuf[i] = *jpg_data++;
+      #ifdef __AVR__
+        pBuf[i] = pgm_read_byte(jpg_data++);
+      #else
+        pBuf[i] = *jpg_data++;
+      #endif
       //Serial.println(pBuf[i],HEX);
     }
     else g_pInFile.read(pBuf,n);
