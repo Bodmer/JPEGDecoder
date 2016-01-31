@@ -5,7 +5,7 @@ This Arduino library supports the rendering of Jpeg files stored both on SD card
 
 Example images can be found in the "extras" folder. The 480 x 320 Mouse480 image has been to compressed to a mere 6.45 Kbytes!
 
-High Jpeg compression ratios work best on images with smooth colour changes, however the Baboon40.jpg image at only 23.8 Kbytes renders quite nicely. Typically a 480x320 image can be compressed without much degradation to less than 32KBytes, as a 24 bit BMP that image would occupy 461KBytes. When storing the jpeg in a memory array bear in mind the Arduino has a maximum 32767 byte limit fo an array size (32KBytes minus 1 byte).
+High Jpeg compression ratios work best on images with smooth colour changes, however the Baboon40.jpg image at only 23.8 KBytes renders quite nicely. Typically a 480x320 image can be compressed without much degradation to less than 32 KBytes, in comparison a 24 bit BMP that image would occupy 461 KBytes! When storing the jpeg in a memory array bear in mind the Arduino has a maximum 32767 byte limit for the maximum size of an array (32 KBytes minus 1 byte).
 
 The decompression of Jpeg images needs more RAM than an UNO provides, thus this library is targetted at the Arduino Mega and Due.
 
@@ -16,6 +16,8 @@ This library supports either the SD or SdFat libraries. The SdFat allows a bit-b
 The library has been tested with the 1.6.7 version of the Arduino IDE and may generate error messages at compile time on other versions because "#ifdef __AVR__" is used to distinguish bettwen the Mega and Due and select the correct libraries.
 
 The library has been tested with 3.2" and 3.0" displays based on the HX8357B, HX8357C and ILI9481 driver chips with a 16 bit parallel interface.  Adapting the example sketch for other TFT drivers and their graphics libraries should be quite easy if they support either setWindow() or SetAddrWindow() and pushColor() functions as found in the Adafruit_GFX library.
+
+On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library! The Due will work fine with bigger image sets in FLASH but text may fail to render correctly because 16 bit addresses are used to access the font bitmap images in typical graphics libraries. Thus it is best to store images on SD Card and only store small icons and startup screens in FLASH.
 
 This library has been based on the excellent picojpeg code and the Arduino library port by Makoto Kurauchi here:
 https://github.com/MakotoKurauchi/JPEGDecoder
