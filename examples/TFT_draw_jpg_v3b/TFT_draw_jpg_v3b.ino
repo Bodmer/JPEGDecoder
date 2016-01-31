@@ -175,10 +175,10 @@ void drawArrayJpeg(const uint8_t arrayname[], uint32_t array_size, int xpos, int
 }
 
 //####################################################################################################
-// Draw a JPEG on the TFT, it is assumed that the image fits within the screen area
+// Draw a JPEG on the TFT, images will be cropped on the right/bottom sides if they do not fit
 //####################################################################################################
 // This function assumes xpos,ypos is a valid screen coordinate. For convenience images that do not
-// fit totally on the screen are cropped to the nearest MCU size, thus may leave top/bottom borders.
+// fit totally on the screen are cropped to the nearest MCU size and may leave right/bottom borders.
 void renderJPEG(int xpos, int ypos) {
 
   jpegInfo(); // Print information from the JPEG file (could comment this line out)
