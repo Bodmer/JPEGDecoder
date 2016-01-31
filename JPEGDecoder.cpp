@@ -3,6 +3,10 @@
  
  JPEG Decoder for Arduino
  Public domain, Makoto Kurauchi <http://yushakobo.jp>
+
+ Adapted by Bodmer:
+ https://github.com/Bodmer/JPEGDecoder
+
 */
 
 #ifdef __AVR__
@@ -46,79 +50,16 @@ unsigned char JPEGDecoder::pjpeg_need_bytes_callback(unsigned char* pBuf, unsign
     
     n = min(g_nInFileSize - g_nInFileOfs, buf_size);
 
-    g_pInFile.read(pBuf,n);
+    if (array_jpg) for (int i = 0; i < n; i++) {
+      pBuf[i] = *jpg_data++;
+      //Serial.println(pBuf[i],HEX);
+    }
+    else g_pInFile.read(pBuf,n);
 
     *pBytes_actually_read = (unsigned char)(n);
     g_nInFileOfs += n;
     return 0;
 }
-
-
-int JPEGDecoder::decode(char* pFilename, unsigned char pReduce){
-    
-    if(pReduce) reduce = pReduce;
-    
-    g_pInFile = SD.open(pFilename, FILE_READ);
-    if (!g_pInFile)
-        return -1;
-
-    g_nInFileOfs = 0;
-
-    g_nInFileSize = g_pInFile.size();
-        
-    status = pjpeg_decode_init(&image_info, pjpeg_callback, NULL, (unsigned char)reduce);
-            
-    if (status)
-    {
-        #ifdef DEBUG
-        Serial.print("pjpeg_decode_init() failed with status ");
-        Serial.println(status);
-        
-        if (status == PJPG_UNSUPPORTED_MODE)
-        {
-            Serial.println("Progressive JPEG files are not supported.");
-        }
-        #endif
-        
-        g_pInFile.close();
-        return -1;
-    }
-    
-    // In reduce mode output 1 pixel per 8x8 block.
-    decoded_width = reduce ? (image_info.m_MCUSPerRow * image_info.m_MCUWidth) / 8 : image_info.m_width;
-    decoded_height = reduce ? (image_info.m_MCUSPerCol * image_info.m_MCUHeight) / 8 : image_info.m_height;
-
-    row_pitch = image_info.m_MCUWidth * image_info.m_comps;
-    //pImage = (uint8 *)malloc(image_info.m_MCUWidth * image_info.m_MCUHeight * image_info.m_comps);
-    pImage = new uint8[image_info.m_MCUWidth * image_info.m_MCUHeight * image_info.m_comps];
-    if (!pImage)
-    {
-        g_pInFile.close();
-        #ifdef DEBUG
-        Serial.println("Memory Allocation Failure");
-        #endif
-        
-        return -1;
-    }
-    memset(pImage , 0 , sizeof(pImage));
-
-    row_blocks_per_mcu = image_info.m_MCUWidth >> 3;
-    col_blocks_per_mcu = image_info.m_MCUHeight >> 3;
-    
-    is_available = 1 ;
-
-    width = decoded_width;
-    height = decoded_height;
-    comps = image_info.m_comps;
-    MCUSPerRow = image_info.m_MCUSPerRow;
-    MCUSPerCol = image_info.m_MCUSPerCol;
-    scanType = image_info.m_scanType;
-    MCUWidth = image_info.m_MCUWidth;
-    MCUHeight = image_info.m_MCUHeight;
-    
-    return decode_mcu();
-}
-
 
 int JPEGDecoder::decode_mcu(void){
 
@@ -265,4 +206,101 @@ int JPEGDecoder::read(void)
     return 1;
 }
 
+//##########################################################################################################
 
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+// >>>>>>>> Deprecated, use decodeFile() or decodeArray() <<<<<<<<
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+int JPEGDecoder::decode(char* pFilename, unsigned char pReduce){
+    decodeFile(pFilename, pReduce);
+}
+
+// >>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+int JPEGDecoder::decodeFile(char* pFilename, unsigned char pReduce){
+    
+    if(pReduce) reduce = pReduce;
+    array_jpg = 0;
+
+    g_pInFile = SD.open(pFilename, FILE_READ);
+    if (!g_pInFile)
+        return -1;
+
+    g_nInFileOfs = 0;
+
+    g_nInFileSize = g_pInFile.size();
+
+    return decodeCommon();
+}
+
+
+int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size, unsigned char pReduce){
+    
+    if(pReduce) reduce = pReduce;
+    
+    g_nInFileOfs = 0;
+
+    array_jpg = 1;
+
+    jpg_data = (uint8_t *)array;
+
+    g_nInFileSize = array_size;
+    
+    return decodeCommon();
+}
+
+
+int JPEGDecoder::decodeCommon(void) {
+
+    status = pjpeg_decode_init(&image_info, pjpeg_callback, NULL, (unsigned char)reduce);
+            
+    if (status)
+    {
+        #ifdef DEBUG
+        Serial.print("pjpeg_decode_init() failed with status ");
+        Serial.println(status);
+        
+        if (status == PJPG_UNSUPPORTED_MODE)
+        {
+            Serial.println("Progressive JPEG files are not supported.");
+        }
+        #endif
+
+        return -1;
+    }
+    
+    // In reduce mode output 1 pixel per 8x8 block.
+    decoded_width = reduce ? (image_info.m_MCUSPerRow * image_info.m_MCUWidth) / 8 : image_info.m_width;
+    decoded_height = reduce ? (image_info.m_MCUSPerCol * image_info.m_MCUHeight) / 8 : image_info.m_height;
+
+    row_pitch = image_info.m_MCUWidth * image_info.m_comps;
+    //pImage = (uint8 *)malloc(image_info.m_MCUWidth * image_info.m_MCUHeight * image_info.m_comps);
+    pImage = new uint8[image_info.m_MCUWidth * image_info.m_MCUHeight * image_info.m_comps];
+    if (!pImage)
+    {
+        #ifdef DEBUG
+        Serial.println("Memory Allocation Failure");
+        #endif
+        
+        return -1;
+    }
+    memset(pImage , 0 , sizeof(pImage));
+
+    row_blocks_per_mcu = image_info.m_MCUWidth >> 3;
+    col_blocks_per_mcu = image_info.m_MCUHeight >> 3;
+    
+    is_available = 1 ;
+
+    width = decoded_width;
+    height = decoded_height;
+    comps = image_info.m_comps;
+    MCUSPerRow = image_info.m_MCUSPerRow;
+    MCUSPerCol = image_info.m_MCUSPerCol;
+    scanType = image_info.m_scanType;
+    MCUWidth = image_info.m_MCUWidth;
+    MCUHeight = image_info.m_MCUHeight;
+
+    return decode_mcu();
+}

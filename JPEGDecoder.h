@@ -42,11 +42,13 @@ private:
     uint row_blocks_per_mcu, col_blocks_per_mcu;
     uint8 status;
     uint8 reduce;
+    uint8 array_jpg;
+    uint8_t* jpg_data; 
     
     static uint8 pjpeg_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data);
     uint8 pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data);
     int decode_mcu(void);
-    
+    int decodeCommon(void);
 public:
 
     uint8 *pImage;
@@ -65,9 +67,13 @@ public:
     
     JPEGDecoder();
     ~JPEGDecoder();
-    int decode(char* pFilename, unsigned char pReduce);
+
     int available(void);
     int read(void);
+
+    int decode     (char* pFilename, unsigned char pReduce); // Deprecated, legacy sketch support only
+    int decodeFile (char* pFilename, unsigned char pReduce);
+    int decodeArray(const uint8_t array[], uint32_t  array_size, unsigned char pReduce);
 
 };
 
