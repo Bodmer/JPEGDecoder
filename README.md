@@ -1,7 +1,7 @@
 Arduino JPEGDecoder library
 ===========
 
-This library supports the rendering of Jpeg files stored on SD card and in arrays within program memory (FLASH) onto a TFT display.
+This Arduino library supports the rendering of Jpeg files stored both on SD card and in arrays within program memory (FLASH) onto a TFT display.
 
 Example images can be found in the "extras" folder. The 480 x 320 Mouse480 image has been to compressed to a mere 6.45 Kbytes!
 
