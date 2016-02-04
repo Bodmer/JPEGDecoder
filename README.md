@@ -17,7 +17,7 @@ The library has been tested with the 1.6.7 version of the Arduino IDE and may ge
 
 The library has been tested with 3.2" and 3.0" displays based on the HX8357B, HX8357C and ILI9481 driver chips with a 16 bit parallel interface.  Adapting the example sketch for other TFT drivers and their graphics libraries should be quite easy if they support either setWindow() or SetAddrWindow() and pushColor() functions as found in the Adafruit_GFX library.
 
-On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library! The Due will work fine with bigger image sets in FLASH but text may fail to render correctly because 16 bit addresses are used to access the font bitmap images in typical graphics libraries. Thus it is best to store images on SD Card and only store small icons and startup screens in FLASH.
+On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library! The Due will work fine with much bigger image sets in FLASH.
 
 This library has been based on the excellent picojpeg code and the Arduino library port by Makoto Kurauchi here:
 https://github.com/MakotoKurauchi/JPEGDecoder
