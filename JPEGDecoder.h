@@ -75,6 +75,8 @@ public:
     int decodeFile (char* pFilename, unsigned char pReduce);
     int decodeArray(const uint8_t array[], uint32_t  array_size, unsigned char pReduce);
 
+    void abort(void);
+
 };
 
 extern JPEGDecoder JpegDec;

@@ -308,3 +308,15 @@ int JPEGDecoder::decodeCommon(void) {
 
     return decode_mcu();
 }
+
+void JPEGDecoder::abort(void){
+    
+    mcu_x = 0 ;
+    mcu_y = 0 ;
+    is_available = 0;
+    reduce = 0;
+    delete pImage;
+    if (g_pInFile) g_pInFile.close();
+}
+
+

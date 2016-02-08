@@ -213,6 +213,7 @@ void renderJPEG(int xpos, int ypos) {
         pImg += JpegDec.comps ;
       }
     }
+    else JpegDec.abort(); // Image has run off bottom of screen so abort decoding
   }
 
   //showTime(millis() - drawTime); // These lines are for sketch testing only
