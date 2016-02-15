@@ -41,7 +41,6 @@ private:
     uint decoded_width, decoded_height;
     uint row_blocks_per_mcu, col_blocks_per_mcu;
     uint8 status;
-    uint8 reduce;
     uint8 array_jpg;
     uint8_t* jpg_data; 
     
@@ -71,10 +70,13 @@ public:
     int available(void);
     int read(void);
 
-    int decode     (char* pFilename, unsigned char pReduce); // Deprecated, legacy sketch support only
+    // Deprecated, legacy sketch support only
+    int decode     (char* pFilename, unsigned char pReduce);
     int decodeFile (char* pFilename, unsigned char pReduce);
     int decodeArray(const uint8_t array[], uint32_t  array_size, unsigned char pReduce);
 
+    int decodeFile (char* pFilename);
+    int decodeArray(const uint8_t array[], uint32_t  array_size);
     void abort(void);
 
 };
