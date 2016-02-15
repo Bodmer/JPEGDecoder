@@ -9,12 +9,6 @@
 
 */
 
-#ifdef __AVR__
-  #include <SD.h>
-#else
-  #include <SdFat.h>
-#endif
-
 #include "JPEGDecoder.h"
 #include "picojpeg.h"
 
@@ -57,8 +51,9 @@ unsigned char JPEGDecoder::pjpeg_need_bytes_callback(unsigned char* pBuf, unsign
       #endif
       //Serial.println(pBuf[i],HEX);
     }
+#ifdef USE_SD_CARD
     else g_pInFile.read(pBuf,n);
-
+#endif
     *pBytes_actually_read = (unsigned char)(n);
     g_nInFileOfs += n;
     return 0;
@@ -73,8 +68,9 @@ int JPEGDecoder::decode_mcu(void){
         is_available = 0 ;
         mcu_y = 0;       // <<<<<< Added to correct 2nd image bug
         delete pImage;   // <<<<<< Added to correct memory leak bug
+#ifdef USE_SD_CARD
         g_pInFile.close();
-
+#endif
         if (status != PJPG_NO_MORE_BLOCKS)
         {
             #ifdef DEBUG
@@ -93,14 +89,16 @@ int JPEGDecoder::decode_mcu(void){
 int JPEGDecoder::read(void)
 {
     int y, x;
-    uint8 *pDst_row;
+    uint16_t *pDst_row;
     
     if(is_available == 0) return 0;
 
     if (mcu_y >= image_info.m_MCUSPerCol)
     {
         delete pImage;
+#ifdef USE_SD_CARD
         g_pInFile.close();
+#endif
         return 0;
     }
 
@@ -112,7 +110,7 @@ int JPEGDecoder::read(void)
 
         for (x = 0; x < image_info.m_MCUWidth; x += 8)
         {
-            uint8 *pDst_block = pDst_row + x * image_info.m_comps;
+            uint16_t *pDst_block = pDst_row + x;
 
             // Compute source byte offset of the block in the decoder's MCU buffer.
             uint src_ofs = (x * 8U) + (y * 16U);
@@ -127,10 +125,10 @@ int JPEGDecoder::read(void)
                 int bx, by;
                 for (by = 0; by < by_limit; by++)
                 {
-                    uint8 *pDst = pDst_block;
+                    uint16_t *pDst = pDst_block;
 
                     for (bx = 0; bx < bx_limit; bx++)
-                        *pDst++ = *pSrcR++;
+                        *pDst++ = *pSrcR >> 3 | (*pSrcR & 0xFC) <<3 | (*pSrcR & 0xF6) << 8;
 
                     pSrcR += (8 - bx_limit);
 
@@ -142,15 +140,12 @@ int JPEGDecoder::read(void)
                 int bx, by;
                 for (by = 0; by < by_limit; by++)
                 {
-                    uint8 *pDst = pDst_block;
+                    uint16_t *pDst = pDst_block;
 
                     for (bx = 0; bx < bx_limit; bx++)
                     {
-                        pDst[0] = *pSrcR++;
-                        pDst[1] = *pSrcG++;
-                        pDst[2] = *pSrcB++;
-
-                        pDst += 3;
+                        *pDst++ = *pSrcB >> 3 | (*pSrcG & 0xFC) <<3 | (*pSrcR & 0xF8) << 8;
+                        pSrcR++; pSrcG++; pSrcB++;
                     }
 
                     pSrcR += (8 - bx_limit);
@@ -202,7 +197,7 @@ int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size, unsign
 
 
 int JPEGDecoder::decodeFile(char* pFilename){
-    
+#ifdef USE_SD_CARD
     array_jpg = 0;
 
     g_pInFile = SD.open(pFilename, FILE_READ);
@@ -214,6 +209,9 @@ int JPEGDecoder::decodeFile(char* pFilename){
     g_nInFileSize = g_pInFile.size();
 
     return decodeCommon();
+#else
+    return 0;
+#endif
 }
 
 
@@ -253,8 +251,8 @@ int JPEGDecoder::decodeCommon(void) {
     decoded_width =  image_info.m_width;
     decoded_height =  image_info.m_height;
 
-    row_pitch = image_info.m_MCUWidth * image_info.m_comps;
-    pImage = new uint8[image_info.m_MCUWidth * image_info.m_MCUHeight * image_info.m_comps];
+    row_pitch = image_info.m_MCUWidth;
+    pImage = new uint16_t[image_info.m_MCUWidth * image_info.m_MCUHeight];
     if (!pImage)
     {
         #ifdef DEBUG
@@ -272,7 +270,7 @@ int JPEGDecoder::decodeCommon(void) {
 
     width = decoded_width;
     height = decoded_height;
-    comps = image_info.m_comps;
+    comps = 1;
     MCUSPerRow = image_info.m_MCUSPerRow;
     MCUSPerCol = image_info.m_MCUSPerCol;
     scanType = image_info.m_scanType;
@@ -288,7 +286,9 @@ void JPEGDecoder::abort(void){
     mcu_y = 0 ;
     is_available = 0;
     delete pImage;
+#ifdef USE_SD_CARD
     if (g_pInFile) g_pInFile.close();
+#endif
 }
 
 

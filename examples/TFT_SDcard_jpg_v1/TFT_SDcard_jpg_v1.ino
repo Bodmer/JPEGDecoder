@@ -6,19 +6,15 @@
 
 // Adapted to display images on a 480 x 320 HX8357 or ILI9481
 // 16 bit parallel TFT by Bodmer (aka rowboteer)
-// Version 0.03b 31/1/16
+// Version 0.05b 15/2/16
 
-// Images can be stored on an SD Card (e.g. picture.jpg) or saved as an array is a
-// header file (see jpeg1.h etc)
+// This sketch renders JPEG images stored on an SD Card.
 
 // Mega TFT library here:
 // https://github.com/Bodmer/TFT_HX8357
 
 // Due TFT library here:
 // https://github.com/Bodmer/TFT_HX8357_Due
-
-// This example draws a jpeg compressed image stored in memory onto the screen
-// the image is 480 x 320 pixels.
 
 // As an example Baboon40.jpg is compressed from ~460 kBytes (24 bit colour) to a mere
 // 24.4 kBytes (~19 times smaller), Mouse480.jpg is 6.45 kBytes (~70 times smaller)
@@ -40,11 +36,6 @@
 // Use the SdFat or SD library examples to verify your SD Card interface works!
 // The example images used to test this sketch can be found in the library
 // JPEGDecoder/extras folder
-
-// As supplied the function calls that pull images from SD Card are commented out
-// change these to suit you image names. As supplied this sketch will draw 4 images to screen
-// from the arrays stored in arrays inside each the jpegX.h file
-
 //----------------------------------------------------------------------------------------------------
 
 #include <SPI.h>
@@ -55,16 +46,16 @@
 // >>>> If you get errors here then edit or comment out the lines not needed.                <<<<
 
 #ifdef __AVR__
-// Mega libraries
-#include <SD.h>                // Use the SD library for the Mega
-#include <TFT_HX8357.h>        // Hardware-specific Mega library
-TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
+  // Mega libraries
+  #include <SD.h>                // Use the SD library for the Mega
+  #include <TFT_HX8357.h>        // Hardware-specific Mega library
+  TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
 #else
-// Due libraries
-#include <SdFat.h>             // Use the SdFat library for the Due
-SdFat SD;                      // Permit SD function call for the Due
-#include <TFT_HX8357_Due.h>    // Hardware-specific Due library
-TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
+  // Due libraries
+  #include <SdFat.h>             // Use the SdFat library for the Due
+  SdFat SD;                      // Permit SD function call for the Due
+  #include <TFT_HX8357_Due.h>    // Hardware-specific Due library
+  TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
 #endif
 
 // JPEG decoder library
@@ -72,15 +63,6 @@ TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
 
 // Chip Select Pin for SD card
 #define SD_CS 53
-
-// Include the sketch header file that contains the image stored as an array of bytes
-// More than one image array could be stored in each header file.
-#include "jpeg1.h"
-#include "jpeg2.h"
-#include "jpeg3.h"
-#include "jpeg4.h"
-
-//#include "Free_Fonts.h" // Include the header file attached to this sketch
 
 // Count how many times the image is drawn for test purposes
 uint32_t icount = 0;
@@ -112,47 +94,40 @@ void setup() {
 //####################################################################################################
 void loop() {
 
-  tft.setRotation(0);  // portrait
+  tft.setRotation(2);  // portrait
   tft.fillScreen(random(0xFFFF));
-  
-  // drawSdJpeg("EagleEye.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
-  // createArray("EagleEye.jpg");  // This pulls a jpeg image off the SD Card and serial dumps an array
-  
+
   // The image is 300 x 300 pixels so we do some sums to position image in the middle of the screen!
   // Doing this by reading the image width and height from the jpeg info is left as an exercise!
-  int x = (tft.width()  - 300)/2 - 1;
-  int y = (tft.height() - 300)/2 - 1;
-  
-  drawArrayJpeg(EagleEye, sizeof(EagleEye), x, y); // Draw a jpeg image stored in memory at x,y
+  int x = (tft.width()  - 300) / 2 - 1;
+  int y = (tft.height() - 300) / 2 - 1;
+
+  drawSdJpeg("EagleEye.jpg", x, y);     // This draws a jpeg pulled off the SD Card
+  // createArray("EagleEye.jpg");  // This pulls a jpeg image off the SD Card and serial dumps an array
   delay(2000);
 
-  tft.setRotation(0);  // portrait
+  tft.setRotation(2);  // portrait
   tft.fillScreen(random(0xFFFF));
-  // drawSdJpeg("Baboon40.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
+  drawSdJpeg("Baboon40.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
   // createArray("Baboon40.jpg");  // This pulls a jpeg image off the SD Card and serial dumps an array
-  drawArrayJpeg(Baboon40, sizeof(Baboon40), 0, 0); // Draw a jpeg image stored in memory
   delay(2000);
 
-  tft.setRotation(0);  // portrait
+  tft.setRotation(2);  // portrait
   tft.fillScreen(random(0xFFFF));
-  // drawSdJpeg("lena20k.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
-  // createArray("lena20k.jpg");  // This pulls a jpeg image off the SD Card and serial dumps an array
-  drawArrayJpeg(lena20k, sizeof(lena20k), 0, 0); // Draw a jpeg image stored in memory
+  drawSdJpeg("lena20k.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
+  //createArray("lena20k.jpg");  // This pulls a jpeg image off the SD Card and serial dumps an array
   delay(2000);
 
   tft.setRotation(1);  // landscape
   tft.fillScreen(random(0xFFFF));
-  // drawSdJpeg("Mouse480.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
-  // createArray("Mouse480.jpg");  // This pulls a jpeg image off the SD Card and serial dumps an array
-  // delay(1000);
-  // tft.fillScreen(random(0xFFFF));
+  drawSdJpeg("Mouse480.jpg", 0, 0);     // This draws a jpeg pulled off the SD Card
 
-  // This image will be deliberately cropped as it is 480 x 320 thes extends off the screen when plotted
-  // at coordinate 50,50
-  drawArrayJpeg(Mouse480, sizeof(Mouse480), 50, 50); // Draw a jpeg image stored in memory, test cropping
+  
+  createArray("Mouse480.jpg");  // This pulls a jpeg image off the SD Card and serial dumps in
+                                // the correct format for a C array.
   delay(2000);
 
-  //while(1);
+  while(1); // Wait here
 }
 
 //####################################################################################################
@@ -161,16 +136,7 @@ void loop() {
 // xpos, ypos is top left corner of plotted image
 void drawSdJpeg(char *filename, int xpos, int ypos) {
 
-  JpegDec.decodeFile(filename, 0);
-  renderJPEG(xpos, ypos);
-}
-
-//####################################################################################################
-// Draw a JPEG on the TFT pulled from a program memory array
-//####################################################################################################
-void drawArrayJpeg(const uint8_t arrayname[], uint32_t array_size, int xpos, int ypos) {
-
-  JpegDec.decodeArray(arrayname, array_size, 0);
+  JpegDec.decodeFile(filename);
   renderJPEG(xpos, ypos);
 }
 
@@ -181,15 +147,15 @@ void drawArrayJpeg(const uint8_t arrayname[], uint32_t array_size, int xpos, int
 // fit totally on the screen are cropped to the nearest MCU size and may leave right/bottom borders.
 void renderJPEG(int xpos, int ypos) {
 
-  jpegInfo(); // Print information from the JPEG file (could comment this line out)
+  //jpegInfo(); // Print information from the JPEG file (could comment this line out)
 
-  uint8_t  *pImg;
+  uint16_t  *pImg;
   uint16_t mcu_w = JpegDec.MCUWidth;    // Width of MCU
   uint16_t mcu_h = JpegDec.MCUHeight;   // Height of MCU
   uint32_t mcu_pixels = mcu_w * mcu_h;  // Total number of pixels in an MCU
 
   uint32_t drawTime = millis(); // For comparison purpose the draw time is measured
-  
+
   // Fetch data from the file, decode and display
   while (JpegDec.read()) {    // While there is more data in the file
     pImg = JpegDec.pImage ;   // Decode a MCU (Minimum Coding Unit, typically a 8x8 or 16x16 pixel block)
@@ -206,17 +172,17 @@ void renderJPEG(int xpos, int ypos) {
       uint32_t count = mcu_pixels;
       while (count--) {
         // Push each pixel to the TFT MCU area
-        // The pImg [B]lue, [G]reen and [R]ed  8 bit array values are
-        // converted to 5+6+5 [B]+[G]+[R] 16 bit format)
-        tft.pushColor(pImg[2] >> 3 | (pImg[1] & 0xFC) << 3 | (pImg[0] & 0xF8) << 8);
-        // Fetch the next decoded pixel
-        pImg += JpegDec.comps ;
+        tft.pushColor(*pImg++);
       }
+
+      // Push all MCU pixels to the TFT window, ~18% faster to pass an array pointer and length to the library
+      // tft.pushColor16(pImg, mcu_pixels); //  To be supported in HX8357 library at a future date
+
     }
     else if ((mcu_y + mcu_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
   }
 
-  //showTime(millis() - drawTime); // These lines are for sketch testing only
+  showTime(millis() - drawTime); // These lines are for sketch testing only
   //Serial.print(" Draw count:");
   //Serial.println(icount++);
 }
@@ -253,9 +219,10 @@ void jpegInfo() {
 //####################################################################################################
 // Show the execution time (optional)
 //####################################################################################################
-// WARNING: for UNO/AVR legacy reasons printing text to the screen will not work for sketch sizes
-// greater than ~70KBytes. This is because 16 bit address pointers are used in the HX8357 library.
-// >>>> Don't complain, it is on my list to be fixed! :-)  <<<<
+// WARNING: for UNO/AVR legacy reasons printing text to the screen with the Mega might not work for
+// sketch sizes greater than ~70KBytes because 16 bit address pointers are used in some libraries.
+
+// The Due will work fine with the HX8357_Due library.
 
 void showTime(uint32_t msTime) {
   //tft.setCursor(0, 0);
@@ -310,54 +277,4 @@ void createArray(const char *filename) {
   // close the file:
   jpgFile.close();
 }
-//####################################################################################################
-// How to setup SdFat to work with the JPEGDecoder library
-//####################################################################################################
 
-// The SD library can be used on the Mega only, it will not work with the Due as the TFT
-// display is not connected to the hardware SPI pins. The SD library does NOT need to be
-// modified.
-
-// The SdFat library can be used with the Mega or Due.
-
-// To use SdFat with the Due you must edit the SdFatConfig.h file so
-// that the Software (bit bashed) SPI signal driving will be employed.
-//
-// You can get a copy of the SdFat library that has already been modified for the Due here:
-// https://github.com/Bodmer/SdFat
-
-//  The changes to be made to the SdFatConfig.h file are indicated by =>> below:
-
-//=>>    #define SD_SPI_CONFIGURATION 2  // Set to 0 for Mega, 2 for Due
-//------------------------------------------------------------------------------
-/**
-   If SD_SPI_CONFIGURATION is defined to be two, these definitions
-   will define the pins used for software SPI.
-
-   The default definition allows Uno shields to be used on other boards.
-*/
-/** Software SPI Master Out Slave In pin */
-//=>>             uint8_t const SOFT_SPI_MOSI_PIN = 51;
-/** Software SPI Master In Slave Out pin */
-//=>>             uint8_t const SOFT_SPI_MISO_PIN = 50;
-/** Software SPI Clock pin */
-//=>>             uint8_t const SOFT_SPI_SCK_PIN  = 52;
-//------------------------------------------------------------------------------
-
-// You MUST also modify the SdFat.h file to make the created SD class members 'global' so
-// they can be used in this sketch and by the JPEGDecoder library.
-// (The SD library makes the equivalent class global without modifications)
-// There may be an easier way to do this but it works OK.
-//
-// The line to add is 'extern SdFat SD;', this must be addedat around line 283
-// after the SdFat class is specified.
-// When the change has been made the following line sequence should appear in the
-// SdFat.h file (do not add the /* or */ !):
-/*
-
-  extern SdFat SD; //<<= Line to add, the next 2 lines are ALREADY in the file, they
-                 //    are included here just to help locate the right place!
-  //==============================================================================
-  #if SD_SPI_CONFIGURATION >= 3 || defined(DOXYGEN)
-
-*/

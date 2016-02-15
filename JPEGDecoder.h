@@ -8,6 +8,18 @@
 #ifndef JPEGDECODER_H
 #define JPEGDECODER_H
 
+#include "User_Config.h"
+
+#include "Arduino.h"
+
+#ifdef USE_SD_CARD
+  #ifdef __AVR__
+    #include <SD.h>
+  #else
+    #include <SdFat.h>
+  #endif
+#endif
+
 #include "picojpeg.h"
 
 //#define DEBUG
@@ -28,7 +40,9 @@ class JPEGDecoder {
 
 private:
 
+#ifdef USE_SD_CARD
     File g_pInFile;
+#endif
     pjpeg_scan_type_t scan_type;
     pjpeg_image_info_t image_info;
     
@@ -50,7 +64,7 @@ private:
     int decodeCommon(void);
 public:
 
-    uint8 *pImage;
+    uint16_t *pImage;
     JPEGDecoder *thisPtr;
 
     int width;
