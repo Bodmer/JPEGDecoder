@@ -175,7 +175,15 @@ void renderJPEG(int xpos, int ypos) {
       tft.setWindow(mcu_x, mcu_y, mcu_x + mcu_w - 1, mcu_y + mcu_h - 1);
 
       // Push all MCU pixels to the TFT window
-      tft.pushColor16(pImg, mcu_pixels);
+      uint32_t count = mcu_pixels;
+      while (count--) {
+        // Push each pixel to the TFT MCU area
+        tft.pushColor(*pImg++);
+      }
+
+      // Push all MCU pixels to the TFT window, ~18% faster to pass an array pointer and length to the library
+      // tft.pushColor16(pImg, mcu_pixels); //  To be supported in HX8357 library at a future date
+
     }
     else if ((mcu_y + mcu_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
   }
