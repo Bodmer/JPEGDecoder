@@ -32,6 +32,7 @@ unsigned char JPEGDecoder::pjpeg_callback(unsigned char* pBuf, unsigned char buf
 {
     JPEGDecoder *thisPtr = JpegDec.thisPtr ;
     thisPtr->pjpeg_need_bytes_callback(pBuf, buf_size, pBytes_actually_read, pCallback_data);
+    return 0;
 }
 
 
