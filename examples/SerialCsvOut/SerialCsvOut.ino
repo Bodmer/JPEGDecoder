@@ -3,24 +3,25 @@
  
  Sample code of JPEG Decoder for Arduino
  Public domain, Makoto Kurauchi <http://yushakobo.jp>
+
+ Adapted by Bodmer
+
+ Note that this library returns pixel data as 16 bit 565 format colour values
+ as used by the 16 bit TFT displays.
 */
 
 #include <arduino.h>
-//#include <rxduino.h>
-//#include <RLduino78.h>
+#include <SPI.h>
 #include <SD.h>
 #include "JPEGDecoder.h"
 
 
 // CS Pin of SD card 
-#define SDCS 10
-
+#define SDCS 53
 
 void setup() {
 
     Serial.begin(115200);
-    while(!Serial.available()); // Input wait
-    Serial.read();
 
     Serial.print("Initializing SD card...");
 
@@ -33,8 +34,8 @@ void setup() {
 
 void loop() {
     char str[100];
-    char filename[] = "test.jpg";
-    uint8 *pImg;
+    char filename[] = "Tiger.jpg";
+    unsigned int *pImg;
     int x,y,bx,by;
     
     // Decoding start
@@ -75,17 +76,10 @@ void loop() {
                 
                 if(x<JpegDec.width && y<JpegDec.height){
 
-                    if(JpegDec.comps == 1){ // Grayscale
-                    
-                        sprintf(str,"#RGB,%d,%d,%u", x, y, pImg[0]);
-                        Serial.println(str);
-
-                    }else{ // RGB
-
-                        sprintf(str,"#RGB,%d,%d,%u,%u,%u", x, y, pImg[0], pImg[1], pImg[2]);
-                        Serial.println(str);
-                    }
+                    sprintf(str,"#RGB,%d,%d,%u", x, y, pImg[0]);
+                    Serial.println(str);
                 }
+
                 pImg += JpegDec.comps ;
             }
         }
