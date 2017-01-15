@@ -7,11 +7,23 @@
  Adapted by Bodmer:
  https://github.com/Bodmer/JPEGDecoder
 
+ Github branch from library snapped so adaptions made by Frederic Plante
+ for ESP8266 and SPIFFS pulled back in to master by Bodmer manually :-(
+ 15/1/17
 */
 
 #include "JPEGDecoder.h"
 #include "picojpeg.h"
 
+#ifdef USE_SPIFFS
+  #include <FS.h>
+  #include "arduino.h"
+  #define USE_FILES
+#endif
+
+#ifdef USE_SD_CARD
+  #define USE_FILES
+#endif
 
 JPEGDecoder JpegDec;
 
@@ -41,9 +53,17 @@ unsigned char JPEGDecoder::pjpeg_need_bytes_callback(unsigned char* pBuf, unsign
     uint n;
 
     pCallback_data;
-    
+
+#ifdef USE_SPIFFS
+		
+	if (g_nInFileSize - g_nInFileOfs < buf_size)n = g_nInFileSize - g_nInFileOfs; else  n = buf_size;
+
+#else
+	
     n = min(g_nInFileSize - g_nInFileOfs, buf_size);
 
+#endif 
+	
     if (array_jpg) for (int i = 0; i < n; i++) {
       #ifdef __AVR__
         pBuf[i] = pgm_read_byte(jpg_data++);
@@ -52,9 +72,10 @@ unsigned char JPEGDecoder::pjpeg_need_bytes_callback(unsigned char* pBuf, unsign
       #endif
       //Serial.println(pBuf[i],HEX);
     }
-#ifdef USE_SD_CARD
+#ifdef USE_FILES
     else g_pInFile.read(pBuf,n);
 #endif
+
     *pBytes_actually_read = (unsigned char)(n);
     g_nInFileOfs += n;
     return 0;
@@ -69,9 +90,11 @@ int JPEGDecoder::decode_mcu(void){
         is_available = 0 ;
         mcu_y = 0;       // <<<<<< Added to correct 2nd image bug
         delete pImage;   // <<<<<< Added to correct memory leak bug
-#ifdef USE_SD_CARD
+
+#ifdef FILES
         g_pInFile.close();
 #endif
+	
         if (status != PJPG_NO_MORE_BLOCKS)
         {
             #ifdef DEBUG
@@ -97,9 +120,11 @@ int JPEGDecoder::read(void)
     if (mcu_y >= image_info.m_MCUSPerCol)
     {
         delete pImage;
-#ifdef USE_SD_CARD
+		
+#ifdef USE_FILES
         g_pInFile.close();
 #endif
+
         return 0;
     }
 
@@ -107,7 +132,15 @@ int JPEGDecoder::read(void)
     pDst_row = pImage;
     for (y = 0; y < image_info.m_MCUHeight; y += 8)
     {
-    const int by_limit = min(8, image_info.m_height - (mcu_y * image_info.m_MCUHeight + y));
+		
+#ifdef ESP8266
+	    int by_limit;
+	    int bx_limit;
+	
+	    if (8 < image_info.m_height - (mcu_y * image_info.m_MCUHeight + y)) by_limit = 8; else by_limit = image_info.m_height - (mcu_y * image_info.m_MCUHeight + y);
+#else
+	    const int by_limit = min(8, image_info.m_height - (mcu_y * image_info.m_MCUHeight + y));
+#endif 
 
         for (x = 0; x < image_info.m_MCUWidth; x += 8)
         {
@@ -119,8 +152,11 @@ int JPEGDecoder::read(void)
             const uint8 *pSrcG = image_info.m_pMCUBufG + src_ofs;
             const uint8 *pSrcB = image_info.m_pMCUBufB + src_ofs;
 
-            const int bx_limit = min(8, image_info.m_width - (mcu_x * image_info.m_MCUWidth + x));
-
+#ifdef ESP8266
+	         if (8 < image_info.m_width - (mcu_x * image_info.m_MCUWidth + x)) bx_limit = 8; else bx_limit = image_info.m_width - (mcu_x * image_info.m_MCUWidth + x);    
+#else
+	         const int bx_limit = min(8, image_info.m_width - (mcu_x * image_info.m_MCUWidth + x));	
+#endif 
             if (image_info.m_scanType == PJPG_GRAYSCALE)
             {
                 int bx, by;
@@ -129,8 +165,10 @@ int JPEGDecoder::read(void)
                     uint16_t *pDst = pDst_block;
 
                     for (bx = 0; bx < bx_limit; bx++)
-                        *pDst++ = *pSrcR >> 3 | (*pSrcR & 0xFC) <<3 | (*pSrcR & 0xF6) << 8;
-
+					{
+						*pDst++ = *pSrcR >> 3 | (*pSrcR & 0xFC) <<3 | (*pSrcR & 0xF6) << 8;
+					}
+					
                     pSrcR += (8 - bx_limit);
 
                     pDst_block += row_pitch;
@@ -198,10 +236,15 @@ int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size, unsign
 
 
 int JPEGDecoder::decodeFile(char* pFilename){
-#ifdef USE_SD_CARD
+#ifdef USE_FILES
     array_jpg = 0;
-
+  #ifdef USE_SD_CARD
     g_pInFile = SD.open(pFilename, FILE_READ);
+  #endif
+  #ifdef USE_SPIFFS
+	g_pInFile = SPIFFS.open(pFilename, "r");
+  #endif
+
     if (!g_pInFile)
         return -1;
 
@@ -210,9 +253,9 @@ int JPEGDecoder::decodeFile(char* pFilename){
     g_nInFileSize = g_pInFile.size();
 
     return decodeCommon();
-#else
-    return 0;
 #endif
+
+    return 0;
 }
 
 
@@ -287,7 +330,8 @@ void JPEGDecoder::abort(void){
     mcu_y = 0 ;
     is_available = 0;
     delete pImage;
-#ifdef USE_SD_CARD
+
+#ifdef USE_FILES
     if (g_pInFile) g_pInFile.close();
 #endif
 }

@@ -50,6 +50,18 @@
   #include <SD.h>                // Use the SD library for the Mega
   #include <TFT_HX8357.h>        // Hardware-specific Mega library
   TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
+
+#endif
+
+#ifdef ESP8266
+
+#include <SD.h>                // Use the SD library for the Mega
+ #define TFT_DC 4
+#define TFT_CS 5
+#include <Arduino.h>
+#include <Adafruit_ILI9341.h>
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
+
 #else
   // Due libraries
   #include <SdFat.h>             // Use the SdFat library for the Due
@@ -62,10 +74,23 @@
 #include <JPEGDecoder.h>
 
 // Chip Select Pin for SD card
-#define SD_CS 53
+#ifdef __AVR__
+byte SD_CS = 53; //Mega256 requirement
+#else
+byte SD_CS = 15; // 0 to 16 
+#endif
 
 // Count how many times the image is drawn for test purposes
 uint32_t icount = 0;
+//----------------------------------------------------------------------------------------------------
+#define TFT_BLACK   0x0000
+#define TFT_BLUE    0x001F
+#define TFT_RED     0xF800
+#define TFT_GREEN   0x07E0
+#define TFT_CYAN    0x07FF
+#define TFT_MAGENTA 0xF81F
+#define TFT_YELLOW  0xFFE0  
+#define TFT_WHITE   0xFFFF
 //----------------------------------------------------------------------------------------------------
 
 

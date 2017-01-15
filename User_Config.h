@@ -3,3 +3,4 @@
 // SD Card access is not needed.
 
 #define USE_SD_CARD
+//#define USE_SPIFFS
