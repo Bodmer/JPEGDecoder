@@ -3,12 +3,6 @@
  
  JPEG Decoder for Arduino
  Public domain, Makoto Kurauchi <http://yushakobo.jp>
- 
- Adapted by Bodmer for use with a TFT screen
- 
- Latest version here:
- https://github.com/Bodmer/JPEGDecoder
- 
 */
 
 #ifndef JPEGDECODER_H
@@ -18,44 +12,24 @@
 
 #include "Arduino.h"
 
-#ifdef ESP8266
-
-  #include "arduino.h"
-  #include <pgmspace.h>
- 
-  #define LOAD_SPIFFS
-  #define FS_NO_GLOBALS
-  #include <FS.h>
-  
-  #ifdef LOAD_SD_LIBRARY
-    #include <SD.h> 
+#ifdef USE_SD_CARD
+  #ifdef __AVR__
+    #include <SD.h>
+  #else
+    #include <SdFat.h>
   #endif
-  
-#else
-	
-  #ifdef LOAD_SD_LIBRARY
-    #ifdef __AVR__
-      #include <SD.h>    // For the Mega
-    #else
-      #include <SdFat.h> // For Due etc where we might need to bit bash the SPI
-    #endif
-  #endif
-  
 #endif
 
 #include "picojpeg.h"
 
-enum {
- JPEG_ARRAY = 0,
- JPEG_FS_FILE,
- JPEG_SD_FILE
-};
-
 //#define DEBUG
 
 //------------------------------------------------------------------------------
-#ifndef jpg_min
-    #define jpg_min(a,b)     (((a) < (b)) ? (a) : (b))
+#ifndef max
+#define max(a,b)     (((a) > (b)) ? (a) : (b))
+#endif
+#ifndef min
+#define min(a,b)     (((a) < (b)) ? (a) : (b))
 #endif
 //------------------------------------------------------------------------------
 typedef unsigned char uint8;
@@ -65,12 +39,10 @@ typedef unsigned int uint;
 class JPEGDecoder {
 
 private:
-  #ifdef LOAD_SD_LIBRARY
-    File g_pInFileSd;
-  #endif
-  #ifdef LOAD_SPIFFS // For future support to ESP32 etc
-    fs::File g_pInFileFs;
-  #endif
+
+#ifdef USE_SD_CARD
+    File g_pInFile;
+#endif
     pjpeg_scan_type_t scan_type;
     pjpeg_image_info_t image_info;
     
@@ -83,7 +55,7 @@ private:
     uint decoded_width, decoded_height;
     uint row_blocks_per_mcu, col_blocks_per_mcu;
     uint8 status;
-    uint8 jpg_source = 0;
+    uint8 array_jpg;
     uint8_t* jpg_data; 
     
     static uint8 pjpeg_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data);
@@ -112,15 +84,12 @@ public:
     int available(void);
     int read(void);
 
-	int decodeFile (const char *pFilename);
-  #ifdef LOAD_SD_LIBRARY
-    int decodeSdFile (const char *pFilename);
-    int decodeSdFile (File g_pInFile);
-  #endif
-  #ifdef LOAD_SPIFFS
-    int decodeFsFile (const char *pFilename);
-	int decodeFsFile (fs::File g_pInFile);
-  #endif
+    // Deprecated, legacy sketch support only
+    int decode     (char* pFilename, unsigned char pReduce);
+    int decodeFile (char* pFilename, unsigned char pReduce);
+    int decodeArray(const uint8_t array[], uint32_t  array_size, unsigned char pReduce);
+
+    int decodeFile (char* pFilename);
     int decodeArray(const uint8_t array[], uint32_t  array_size);
     void abort(void);
 

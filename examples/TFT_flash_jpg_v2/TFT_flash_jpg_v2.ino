@@ -42,18 +42,6 @@
 
 #include <SPI.h>
 #include <arduino.h>
-#ifdef ESP8266
-
-void setup(){
-  
-  Serial.begin(115200);
-  Serial.println("\r\n\r\nThis one is not compatible with ESP8266 for structural reason. Use the TFT_SPIFF_jpeg_v3 example to use your Flash.");
-
-}
-
-void loop(){yield();}
-
-#else
 
 // Next the libraries are selected depending on whether it is an AVR (Mega) or otherwise a Due
 // >>>> Note: This works OK with IDE 1.6.7 but might produce errors with other IDE versions. <<<<
@@ -77,13 +65,10 @@ TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
 
 // Include the sketch header file that contains the image stored as an array of bytes
 // More than one image array could be stored in each header file.
-
 #include "jpeg1.h"
 #include "jpeg2.h"
 #include "jpeg3.h"
 #include "jpeg4.h"
-
-
 
 // Count how many times the image is drawn for test purposes
 uint32_t icount = 0;
@@ -325,6 +310,4 @@ void showTime(uint32_t msTime) {
   Serial.print(msTime);
   Serial.println(F(" ms "));
 }
-
-#endif
 
