@@ -3,11 +3,6 @@
  
  JPEG Decoder for Arduino
  Public domain, Makoto Kurauchi <http://yushakobo.jp>
- 
- Adapted by Bodmer for use with a TFT screen
- 
- SPIFFS additions by Frederic Plante for ESP8266
- 
 */
 
 #ifndef JPEGDECODER_H
@@ -23,11 +18,6 @@
   #else
     #include <SdFat.h>
   #endif
-#endif
-
-#ifdef USE_SPIFFS
-  #include <FS.h>
-  #include "arduino.h"
 #endif
 
 #include "picojpeg.h"
@@ -53,11 +43,6 @@ private:
 #ifdef USE_SD_CARD
     File g_pInFile;
 #endif
-
-#ifdef USE_SPIFFS
-    File g_pInFile;
-#endif
-
     pjpeg_scan_type_t scan_type;
     pjpeg_image_info_t image_info;
     

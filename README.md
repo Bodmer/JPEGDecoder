@@ -21,8 +21,6 @@ The library has been tested with 3.2" and 3.0" displays based on the HX8357B, HX
 
 On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library! The Due will work fine with much bigger image sets in FLASH.
 
-### UPDATE: The ESP8266 adaptions by Frederic Plante have been merged back in to this master copy
-
 This library has been based on the excellent picojpeg code and the Arduino library port by Makoto Kurauchi here:
 https://github.com/MakotoKurauchi/JPEGDecoder
 

@@ -8,9 +8,6 @@
 
  Note that this library returns pixel data as 16 bit 565 format colour values
  as used by the 16 bit TFT displays.
-
- Readapted to work on ESP8266 by Frederic Plante
- 
 */
 
 #include <arduino.h>
@@ -18,22 +15,13 @@
 #include <SD.h>
 #include "JPEGDecoder.h"
 
-#ifdef __AVR__
-#define SDCS 53 //Mega256 requirement
-#else
-#define SDCS 5 // 0 to 16 
-#endif
+
+// CS Pin of SD card 
+#define SDCS 53
 
 void setup() {
 
-#ifdef __AVR__
-  Serial.begin(115200);
-
-#else
-
-  Serial.begin(921600);
-
-#endif
+    Serial.begin(115200);
 
     Serial.print("Initializing SD card...");
 
@@ -47,7 +35,7 @@ void setup() {
 void loop() {
     char str[100];
     char filename[] = "Tiger.jpg";
-    uint16_t *pImg;
+    unsigned int *pImg;
     int x,y,bx,by;
     
     // Decoding start
@@ -96,15 +84,6 @@ void loop() {
             }
         }
     }
-#ifdef ESP8266
     
-    while(1){ yield();}
-
-
-#else
-
     for(;;);
-     
-#endif 
-    
 }
