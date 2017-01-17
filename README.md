@@ -26,7 +26,6 @@ On a Mega the number of images stored in FLASH must be limited because it they a
 This library has been based on the excellent picojpeg code and the Arduino library port by Makoto Kurauchi here:
 https://github.com/MakotoKurauchi/JPEGDecoder
 
-Makoto's version decoded an image and sent it to the serial port as an ASCII stream for displaying on a PC. The version here has been extended and various bugs removed. The library can now pull files from an array or SD card and return 16 bit colours to the calling sketch so they can be piped directly to a TFT display.
 
 Makoto's original Readme below:
 ==============================
