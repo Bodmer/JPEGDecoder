@@ -117,8 +117,7 @@ void loop()
   tft.setRotation(0);  // portrait
   tft.fillScreen(random(0xFFFF));
 
-  drawFSJpeg("/odd_size.jpg", 0, 0);
-  //drawFSJpeg("/EagleEye.jpg", 0, 0);
+  drawFSJpeg("/EagleEye.jpg", 0, 0);
   delay(2000);
 
   // This is quite a famous picture used for testing image compression algorithms
