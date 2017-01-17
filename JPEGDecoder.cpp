@@ -1,17 +1,34 @@
 /*
  JPEGDecoder.cpp
- 
+
  JPEG Decoder for Arduino
+ https://github.com/MakotoKurauchi/JPEGDecoder
  Public domain, Makoto Kurauchi <http://yushakobo.jp>
 
- Adapted by Bodmer:
+ Latest version here:
  https://github.com/Bodmer/JPEGDecoder
+ 
+ Bodmer (21/6/15): Adapted by Bodmer to display JPEGs on TFT (works with Mega and Due) but there
+ is a memory leak somewhere, crashes after decoding 1 file :-)
+ 
+ Bodmer (29/1/16): Now in a state with sufficient Mega and Due testing to release in the wild
 
+ Bodmer (various): Various updates and latent bugs fixed
+ 
+ Bodmer (14/1/17): Tried to manually add ESP8266 and SPIFFS support from Frederic Plante's broken branch,
+                   worked on ESP8266 but broke the array handling (may be my mistake!)
+ 
+ Bodmer (14/1/17): Scrapped all manual updates and extended the built-in approach to using different
+                   data sources (currently array, SD files and/or SPIFFS files)
+ 
+ Bodmer (14/1/17): Added ESP8266 support and SPIFFS as a source, added configuration option to
+                   swap bytes to support fast image transfer to TFT using ESP8266 SPI writePattern().
+ 
+ Bodmer (15/1/17): Now supports ad hoc use of SPIFFS, SD and arrays without manual configuration.
 */
 
 #include "JPEGDecoder.h"
 #include "picojpeg.h"
-
 
 JPEGDecoder JpegDec;
 
@@ -28,57 +45,59 @@ JPEGDecoder::~JPEGDecoder(){
 }
 
 
-unsigned char JPEGDecoder::pjpeg_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
-{
+uint8_t JPEGDecoder::pjpeg_callback(uint8_t* pBuf, uint8_t buf_size, uint8_t *pBytes_actually_read, void *pCallback_data) {
     JPEGDecoder *thisPtr = JpegDec.thisPtr ;
     thisPtr->pjpeg_need_bytes_callback(pBuf, buf_size, pBytes_actually_read, pCallback_data);
     return 0;
 }
 
 
-unsigned char JPEGDecoder::pjpeg_need_bytes_callback(unsigned char* pBuf, unsigned char buf_size, unsigned char *pBytes_actually_read, void *pCallback_data)
-{
+uint8_t JPEGDecoder::pjpeg_need_bytes_callback(uint8_t* pBuf, uint8_t buf_size, uint8_t *pBytes_actually_read, void *pCallback_data) {
     uint n;
 
     pCallback_data;
-    
-    n = min(g_nInFileSize - g_nInFileOfs, buf_size);
 
-    if (array_jpg) for (int i = 0; i < n; i++) {
-      #ifdef __AVR__
-        pBuf[i] = pgm_read_byte(jpg_data++);
-      #else
-        pBuf[i] = *jpg_data++;
-      #endif
-      //Serial.println(pBuf[i],HEX);
+	n = jpg_min(g_nInFileSize - g_nInFileOfs, buf_size);
+
+    if (jpg_source == JPEG_ARRAY) { // We are handling an array
+		for (int i = 0; i < n; i++) {
+            pBuf[i] = pgm_read_byte(jpg_data++);
+            //Serial.println(pBuf[i],HEX);
+		}
     }
-#ifdef USE_SD_CARD
-    else g_pInFile.read(pBuf,n);
+
+#ifdef LOAD_SPIFFS
+	if (jpg_source == JPEG_FS_FILE) g_pInFileFs.read(pBuf,n); // else we are handling a file
 #endif
-    *pBytes_actually_read = (unsigned char)(n);
+#ifdef LOAD_SD_LIBRARY
+	if (jpg_source == JPEG_SD_FILE) g_pInFileSd.read(pBuf,n); // else we are handling a file
+#endif
+
+    *pBytes_actually_read = (uint8_t)(n);
     g_nInFileOfs += n;
     return 0;
 }
 
-int JPEGDecoder::decode_mcu(void){
+int JPEGDecoder::decode_mcu(void) {
 
     status = pjpeg_decode_mcu();
-    
-    if (status)
-    {
+
+    if (status) {
         is_available = 0 ;
-        mcu_y = 0;       // <<<<<< Added to correct 2nd image bug
-        delete pImage;   // <<<<<< Added to correct memory leak bug
-#ifdef USE_SD_CARD
-        g_pInFile.close();
+        mcu_y = 0;
+        delete pImage;
+#ifdef LOAD_SPIFFS
+        if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
 #endif
-        if (status != PJPG_NO_MORE_BLOCKS)
-        {
+#ifdef LOAD_SD_LIBRARY
+        if (jpg_source == JPEG_SD_FILE) g_pInFileSd.close();
+#endif
+        if (status != PJPG_NO_MORE_BLOCKS) {
             #ifdef DEBUG
             Serial.print("pjpeg_decode_mcu() failed with status ");
             Serial.println(status);
             #endif
-            
+
             delete pImage;
             return -1;
         }
@@ -87,30 +106,30 @@ int JPEGDecoder::decode_mcu(void){
 }
 
 
-int JPEGDecoder::read(void)
-{
+int JPEGDecoder::read(void) {
     int y, x;
     uint16_t *pDst_row;
-    
+
     if(is_available == 0) return 0;
 
-    if (mcu_y >= image_info.m_MCUSPerCol)
-    {
+    if (mcu_y >= image_info.m_MCUSPerCol) {
         delete pImage;
-#ifdef USE_SD_CARD
-        g_pInFile.close();
+#ifdef LOAD_SPIFFS
+        if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
+#endif
+#ifdef LOAD_SD_LIBRARY
+        if (jpg_source == JPEG_SD_FILE) g_pInFileSd.close();
 #endif
         return 0;
     }
 
     // Copy MCU's pixel blocks into the destination bitmap.
     pDst_row = pImage;
-    for (y = 0; y < image_info.m_MCUHeight; y += 8)
-    {
-    const int by_limit = min(8, image_info.m_height - (mcu_y * image_info.m_MCUHeight + y));
+    for (y = 0; y < image_info.m_MCUHeight; y += 8) {
 
-        for (x = 0; x < image_info.m_MCUWidth; x += 8)
-        {
+	    const int by_limit = jpg_min(8, image_info.m_height - (mcu_y * image_info.m_MCUHeight + y));
+
+        for (x = 0; x < image_info.m_MCUWidth; x += 8) {
             uint16_t *pDst_block = pDst_row + x;
 
             // Compute source byte offset of the block in the decoder's MCU buffer.
@@ -119,36 +138,43 @@ int JPEGDecoder::read(void)
             const uint8 *pSrcG = image_info.m_pMCUBufG + src_ofs;
             const uint8 *pSrcB = image_info.m_pMCUBufB + src_ofs;
 
-            const int bx_limit = min(8, image_info.m_width - (mcu_x * image_info.m_MCUWidth + x));
+	        const int bx_limit = jpg_min(8, image_info.m_width - (mcu_x * image_info.m_MCUWidth + x));
 
-            if (image_info.m_scanType == PJPG_GRAYSCALE)
-            {
+            if (image_info.m_scanType == PJPG_GRAYSCALE) {
                 int bx, by;
-                for (by = 0; by < by_limit; by++)
-                {
+                for (by = 0; by < by_limit; by++) {
                     uint16_t *pDst = pDst_block;
-
-                    for (bx = 0; bx < bx_limit; bx++)
-                        *pDst++ = *pSrcR >> 3 | (*pSrcR & 0xFC) <<3 | (*pSrcR & 0xF6) << 8;
-
+#ifdef SWAP_BYTES
+                    for (bx = 0; bx < bx_limit; bx++) {
+                        *pDst++ = (*pSrcR & 0xF8) | (*pSrcR & 0xE0) >> 5 | (*pSrcR & 0xF8) << 5 | (*pSrcR & 0x1C) << 11;
+						pSrcR++;
+					}
+#else
+                    for (bx = 0; bx < bx_limit; bx++) {
+                        *pDst++ = (*pSrcR & 0xF8) << 8 | (*pSrcR & 0xFC) <<3 | *pSrcR >> 3;
+						pSrcR++;
+					}
+#endif
                     pSrcR += (8 - bx_limit);
 
                     pDst_block += row_pitch;
                 }
             }
-            else
-            {
+            else {
                 int bx, by;
-                for (by = 0; by < by_limit; by++)
-                {
+                for (by = 0; by < by_limit; by++) {
                     uint16_t *pDst = pDst_block;
-
-                    for (bx = 0; bx < bx_limit; bx++)
-                    {
-                        *pDst++ = *pSrcB >> 3 | (*pSrcG & 0xFC) <<3 | (*pSrcR & 0xF8) << 8;
+#ifdef SWAP_BYTES
+                    for (bx = 0; bx < bx_limit; bx++) {
+                        *pDst++ = (*pSrcR & 0xF8) | (*pSrcG & 0xE0) >> 5 | (*pSrcB & 0xF8) << 5 | (*pSrcG & 0x1C) << 11;
                         pSrcR++; pSrcG++; pSrcB++;
                     }
-
+#else
+                    for (bx = 0; bx < bx_limit; bx++) {
+                        *pDst++ = (*pSrcR & 0xF8) << 8 | (*pSrcG & 0xFC) <<3 | *pSrcB >> 3;
+                        pSrcR++; pSrcG++; pSrcB++;
+                    }
+#endif
                     pSrcR += (8 - bx_limit);
                     pSrcG += (8 - bx_limit);
                     pSrcB += (8 - bx_limit);
@@ -162,10 +188,9 @@ int JPEGDecoder::read(void)
 
     MCUx = mcu_x;
     MCUy = mcu_y;
-    
+
     mcu_x++;
-    if (mcu_x == image_info.m_MCUSPerRow)
-    {
+    if (mcu_x == image_info.m_MCUSPerRow) {
         mcu_x = 0;
         mcu_y++;
     }
@@ -175,57 +200,103 @@ int JPEGDecoder::read(void)
     return 1;
 }
 
-//##########################################################################################################
+	// Generic file call for SD or SPIFFS, uses leading / to distinguish SPIFFS files
+int JPEGDecoder::decodeFile(const char *pFilename){
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-// >>>>>>>> Deprecated, use decodeFile() or decodeArray() <<<<<<<<
-// >>>>>>>> pReduce is no longer supported                <<<<<<<<
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+#ifdef ESP8266
+	if (*pFilename == '/') {
+		fs::File pInFile = SPIFFS.open( pFilename, "r");
 
-int JPEGDecoder::decode(char* pFilename, unsigned char pReduce){
-    decodeFile(pFilename);
+		return decodeFsFile(pInFile);
+	}
+#endif
+
+#ifdef LOAD_SD_LIBRARY
+	File pInFile = SD.open( pFilename, FILE_READ);
+
+	return decodeSdFile(pInFile);
+#endif
+
+	return -1;
 }
 
-int JPEGDecoder::decodeFile(char* pFilename, unsigned char pReduce){
-    decodeFile(pFilename);
+
+#ifdef LOAD_SPIFFS
+
+	// Call specific to SPIFFS
+int JPEGDecoder::decodeFsFile(const char *pFilename) {
+
+	fs::File pInFile = SPIFFS.open( pFilename, "r");
+
+	return decodeFsFile(pInFile);
 }
 
-int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size, unsigned char pReduce){
-    decodeArray(array, array_size);
-}
+int JPEGDecoder::decodeFsFile(fs::File jpgFile) { // This is for the SPIFFS library
 
-// >>>>>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+    g_pInFileFs = jpgFile;
 
+    jpg_source = JPEG_FS_FILE; // Flag to indicate a SPIFFS file
 
-int JPEGDecoder::decodeFile(char* pFilename){
-#ifdef USE_SD_CARD
-    array_jpg = 0;
+    if (!g_pInFileFs) {
+		#ifdef DEBUG
+		Serial.println("ERROR: SPIFFS file not found!");
+		#endif
 
-    g_pInFile = SD.open(pFilename, FILE_READ);
-    if (!g_pInFile)
         return -1;
+	}
 
     g_nInFileOfs = 0;
 
-    g_nInFileSize = g_pInFile.size();
+    g_nInFileSize = g_pInFileFs.size();
 
     return decodeCommon();
-#else
-    return 0;
+
+}
 #endif
+
+#ifdef LOAD_SD_LIBRARY
+
+	// Call specific to SD filing system in case leading / is used
+int JPEGDecoder::decodeSdFile(const char *pFilename) {
+
+	File pInFile = SD.open( pFilename, FILE_READ);
+
+	return decodeSdFile(pInFile);
 }
 
+int JPEGDecoder::decodeSdFile(File jpgFile) { // This is for the SD library
 
-int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size){
-    
-    array_jpg = 1;
+    g_pInFileSd = jpgFile;
+
+    jpg_source = JPEG_SD_FILE; // Flag to indicate a SD file
+
+    if (!g_pInFileSd) {
+		#ifdef DEBUG
+		Serial.println("ERROR: SD file not found!");
+		#endif
+
+		return -1;
+	}
+
+    g_nInFileOfs = 0;
+
+    g_nInFileSize = g_pInFileSd.size();
+
+    return decodeCommon();
+
+}
+#endif
+
+int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size) {
+
+    jpg_source = JPEG_ARRAY; // We are not processing a file, use arrays
 
     g_nInFileOfs = 0;
 
     jpg_data = (uint8_t *)array;
 
     g_nInFileSize = array_size;
-    
+
     return decodeCommon();
 }
 
@@ -233,40 +304,37 @@ int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size){
 int JPEGDecoder::decodeCommon(void) {
 
     status = pjpeg_decode_init(&image_info, pjpeg_callback, NULL, 0);
-            
-    if (status)
-    {
+
+    if (status) {
         #ifdef DEBUG
         Serial.print("pjpeg_decode_init() failed with status ");
         Serial.println(status);
-        
-        if (status == PJPG_UNSUPPORTED_MODE)
-        {
+
+        if (status == PJPG_UNSUPPORTED_MODE) {
             Serial.println("Progressive JPEG files are not supported.");
         }
         #endif
 
         return -1;
     }
-    
+
     decoded_width =  image_info.m_width;
     decoded_height =  image_info.m_height;
 
     row_pitch = image_info.m_MCUWidth;
     pImage = new uint16_t[image_info.m_MCUWidth * image_info.m_MCUHeight];
-    if (!pImage)
-    {
+    if (!pImage) {
         #ifdef DEBUG
         Serial.println("Memory Allocation Failure");
         #endif
-        
+
         return -1;
     }
     memset(pImage , 0 , sizeof(pImage));
 
     row_blocks_per_mcu = image_info.m_MCUWidth >> 3;
     col_blocks_per_mcu = image_info.m_MCUHeight >> 3;
-    
+
     is_available = 1 ;
 
     width = decoded_width;
@@ -281,15 +349,18 @@ int JPEGDecoder::decodeCommon(void) {
     return decode_mcu();
 }
 
-void JPEGDecoder::abort(void){
-    
+void JPEGDecoder::abort(void) {
+
     mcu_x = 0 ;
     mcu_y = 0 ;
     is_available = 0;
     delete pImage;
-#ifdef USE_SD_CARD
-    if (g_pInFile) g_pInFile.close();
-#endif
+  #ifdef LOAD_SPIFFS
+	if (jpg_source == JPEG_FS_FILE) if (g_pInFileFs) g_pInFileFs.close();
+  #endif
+  #ifdef LOAD_SD_LIBRARY
+    if (jpg_source == JPEG_SD_FILE) if (g_pInFileSd) g_pInFileSd.close();
+  #endif
 }
 
 
