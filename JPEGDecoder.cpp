@@ -86,7 +86,7 @@ int JPEGDecoder::decode_mcu(void) {
     if (status) {
         is_available = 0 ;
         mcu_y = 0;
-        delete pImage;
+        //delete pImage;
 		
 #ifdef LOAD_SPIFFS
         if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
@@ -114,7 +114,10 @@ int JPEGDecoder::read(void) {
     int y, x;
     uint16_t *pDst_row;
 
-    if(is_available == 0) return 0;
+    if(is_available == 0) {
+	delete pImage;
+	return 0;
+    }
 
     if (mcu_y >= image_info.m_MCUSPerCol) {
         delete pImage;
