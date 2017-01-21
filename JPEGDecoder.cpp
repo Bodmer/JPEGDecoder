@@ -93,19 +93,6 @@ int JPEGDecoder::decode_mcu(void) {
 
     if (status) {
         is_available = 0 ;
-<<<<<<< HEAD
-=======
-        mcu_y = 0;
-        //delete pImage;
-		
-#ifdef LOAD_SPIFFS
-        if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
-#endif
-
-#ifdef LOAD_SD_LIBRARY
-        if (jpg_source == JPEG_SD_FILE) g_pInFileSd.close();
-#endif
->>>>>>> origin/master
 
         if (status != PJPG_NO_MORE_BLOCKS) {
             #ifdef DEBUG
@@ -124,33 +111,11 @@ int JPEGDecoder::read(void) {
     int y, x;
     uint16_t *pDst_row;
 
-<<<<<<< HEAD
     if(is_available == 0 || mcu_y >= image_info.m_MCUSPerCol) {
 		abort();
 		return 0;
 	}
 	
-=======
-    if(is_available == 0) {
-	delete pImage;
-	return 0;
-    }
-
-    if (mcu_y >= image_info.m_MCUSPerCol) {
-        delete pImage;
-		
-#ifdef LOAD_SPIFFS
-        if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
-#endif
-
-#ifdef LOAD_SD_LIBRARY
-        if (jpg_source == JPEG_SD_FILE) g_pInFileSd.close();
-#endif
-
-        return 0;
-    }
-
->>>>>>> origin/master
     // Copy MCU's pixel blocks into the destination bitmap.
     pDst_row = pImage;
     for (y = 0; y < image_info.m_MCUHeight; y += 8) {
