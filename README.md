@@ -11,9 +11,9 @@ High Jpeg compression ratios work best on images with smooth colour changes, how
 
 When storing the jpeg in a memory array bear in mind the Arduino has a maximum 32767 byte limit for the maximum size of an array (32 KBytes minus 1 byte).
 
-The decompression of Jpeg images needs more RAM than an UNO provides, thus this library is targetted at the Arduino Mega and Due.
+The decompression of Jpeg images needs more RAM than an UNO provides, thus this library is targetted at the Arduino Mega, Due and ESP8266 based boards.
 
-The decompression of Jpegs involves a lot of maths, so it takes a Due about ~1.3s to render a fullscreen (480x320 pixel) image and the Mega will take ~5s to do the same. The time for smaller images will reduce roughly pro-rata with the total pixel count. An ESP8266 running at 160MHz and 40MHz SPI coupled to a 320x240 ILI9341 display can render a Jpeg in as little at 240ms.
+The decompression of Jpegs involves a lot of maths, so it takes a Due about ~1.3s to render a fullscreen (480x320 pixel) image and the Mega will take ~5s to do the same. The time for smaller images will reduce roughly pro-rata with the total pixel count. An ESP8266 running at 160MHz and 40MHz SPI coupled to a 320x240 ILI9341 display can render a Jpeg in as little as 240ms.
 
 This library supports either the SD library (and SdFat for Due). The SdFat allows a bit-bashed SPI interface to an SD Card which can be convenient for example on pins 50, 51 and 52 of a Due (on Mega these are hardware SPI).
 
