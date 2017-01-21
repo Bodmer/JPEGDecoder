@@ -16,22 +16,15 @@
  Bodmer (various): Various updates and latent bugs fixed
  
  Bodmer (14/1/17): Tried to merge ESP8266 and SPIFFS support from Frederic Plante's broken branch,
-                   worked on ESP8266, but broke the array handling :-(
+                   worked on ESP8266, but broke the array handling.
  
- Bodmer (14/1/17): Scrapped all FP's updates, extended the built-in approach to using different
+ Bodmer (14/1/17): Scrapped all merged updates and extended the built-in approach to using different
                    data sources (currently array, SD files and/or SPIFFS files)
  
  Bodmer (14/1/17): Added ESP8266 support and SPIFFS as a source, added configuration option to
                    swap bytes to support fast image transfer to TFT using ESP8266 SPI writePattern().
  
  Bodmer (15/1/17): Now supports ad hoc use of SPIFFS, SD and arrays without manual configuration.
- 
- Bodmer (19/1/17): Add support for filename being String type
- 
- Bodmer (20/1/17): Correct last mcu block corruption (thanks stevstrong for tracking that bug down!)
- 
- Bodmer (20/1/17): Prevent deleting the pImage pointer twice (causes an exception on ESP8266),
-                   tidy up code.
 */
 
 #include "JPEGDecoder.h"
@@ -48,8 +41,7 @@ JPEGDecoder::JPEGDecoder(){
 
 
 JPEGDecoder::~JPEGDecoder(){
-    if (pImage) delete pImage;
-	pImage = NULL;
+    delete pImage;
 }
 
 
@@ -93,6 +85,16 @@ int JPEGDecoder::decode_mcu(void) {
 
     if (status) {
         is_available = 0 ;
+        mcu_y = 0;
+        delete pImage;
+		
+#ifdef LOAD_SPIFFS
+        if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
+#endif
+
+#ifdef LOAD_SD_LIBRARY
+        if (jpg_source == JPEG_SD_FILE) g_pInFileSd.close();
+#endif
 
         if (status != PJPG_NO_MORE_BLOCKS) {
             #ifdef DEBUG
@@ -100,6 +102,7 @@ int JPEGDecoder::decode_mcu(void) {
             Serial.println(status);
             #endif
 
+            delete pImage;
             return -1;
         }
     }
@@ -111,11 +114,22 @@ int JPEGDecoder::read(void) {
     int y, x;
     uint16_t *pDst_row;
 
-    if(is_available == 0 || mcu_y >= image_info.m_MCUSPerCol) {
-		abort();
-		return 0;
-	}
-	
+    if(is_available == 0) return 0;
+
+    if (mcu_y >= image_info.m_MCUSPerCol) {
+        delete pImage;
+		
+#ifdef LOAD_SPIFFS
+        if (jpg_source == JPEG_FS_FILE) g_pInFileFs.close();
+#endif
+
+#ifdef LOAD_SD_LIBRARY
+        if (jpg_source == JPEG_SD_FILE) g_pInFileSd.close();
+#endif
+
+        return 0;
+    }
+
     // Copy MCU's pixel blocks into the destination bitmap.
     pDst_row = pImage;
     for (y = 0; y < image_info.m_MCUHeight; y += 8) {
@@ -127,9 +141,9 @@ int JPEGDecoder::read(void) {
 
             // Compute source byte offset of the block in the decoder's MCU buffer.
             uint src_ofs = (x * 8U) + (y * 16U);
-            const uint8_t *pSrcR = image_info.m_pMCUBufR + src_ofs;
-            const uint8_t *pSrcG = image_info.m_pMCUBufG + src_ofs;
-            const uint8_t *pSrcB = image_info.m_pMCUBufB + src_ofs;
+            const uint8 *pSrcR = image_info.m_pMCUBufR + src_ofs;
+            const uint8 *pSrcG = image_info.m_pMCUBufG + src_ofs;
+            const uint8 *pSrcB = image_info.m_pMCUBufB + src_ofs;
 
 	        const int bx_limit = jpg_min(8, image_info.m_width - (mcu_x * image_info.m_MCUWidth + x));
 
@@ -137,31 +151,37 @@ int JPEGDecoder::read(void) {
                 int bx, by;
                 for (by = 0; by < by_limit; by++) {
                     uint16_t *pDst = pDst_block;
-
-					for (bx = 0; bx < bx_limit; bx++) {
 #ifdef SWAP_BYTES
+                    for (bx = 0; bx < bx_limit; bx++) {
                         *pDst++ = (*pSrcR & 0xF8) | (*pSrcR & 0xE0) >> 5 | (*pSrcR & 0xF8) << 5 | (*pSrcR & 0x1C) << 11;
-#else
-                        *pDst++ = (*pSrcR & 0xF8) << 8 | (*pSrcR & 0xFC) <<3 | *pSrcR >> 3;
-#endif
 						pSrcR++;
 					}
-				}
+#else
+                    for (bx = 0; bx < bx_limit; bx++) {
+                        *pDst++ = (*pSrcR & 0xF8) << 8 | (*pSrcR & 0xFC) <<3 | *pSrcR >> 3;
+						pSrcR++;
+					}
+#endif
+                    pSrcR += (8 - bx_limit);
+
+                    pDst_block += row_pitch;
+                }
             }
             else {
                 int bx, by;
                 for (by = 0; by < by_limit; by++) {
                     uint16_t *pDst = pDst_block;
-
-                    for (bx = 0; bx < bx_limit; bx++) {
 #ifdef SWAP_BYTES
+                    for (bx = 0; bx < bx_limit; bx++) {
                         *pDst++ = (*pSrcR & 0xF8) | (*pSrcG & 0xE0) >> 5 | (*pSrcB & 0xF8) << 5 | (*pSrcG & 0x1C) << 11;
-#else
-                        *pDst++ = (*pSrcR & 0xF8) << 8 | (*pSrcG & 0xFC) <<3 | *pSrcB >> 3;
-#endif
                         pSrcR++; pSrcG++; pSrcB++;
                     }
-
+#else
+                    for (bx = 0; bx < bx_limit; bx++) {
+                        *pDst++ = (*pSrcR & 0xF8) << 8 | (*pSrcG & 0xFC) <<3 | *pSrcB >> 3;
+                        pSrcR++; pSrcG++; pSrcB++;
+                    }
+#endif
                     pSrcR += (8 - bx_limit);
                     pSrcG += (8 - bx_limit);
                     pSrcB += (8 - bx_limit);
@@ -187,36 +207,21 @@ int JPEGDecoder::read(void) {
     return 1;
 }
 
-
-
 	// Generic file call for SD or SPIFFS, uses leading / to distinguish SPIFFS files
 int JPEGDecoder::decodeFile(const char *pFilename){
 
 #ifdef ESP8266
-  #ifdef LOAD_SD_LIBRARY
-	if (*pFilename == '/')
-  #endif
-		return decodeFsFile(pFilename);
+	if (*pFilename == '/') {
+		fs::File pInFile = SPIFFS.open( pFilename, "r");
+
+		return decodeFsFile(pInFile);
+	}
 #endif
 
 #ifdef LOAD_SD_LIBRARY
-	return decodeSdFile(pFilename);
-#endif
+	File pInFile = SD.open( pFilename, FILE_READ);
 
-	return -1;
-}
-
-int JPEGDecoder::decodeFile(const String& pFilename){
-
-#ifdef ESP8266
-  #ifdef LOAD_SD_LIBRARY
-	if (pFilename.charAt(0) == '/')
-  #endif
-		return decodeFsFile(pFilename);
-#endif
-
-#ifdef LOAD_SD_LIBRARY
-	return decodeSdFile(pFilename);
+	return decodeSdFile(pInFile);
 #endif
 
 	return -1;
@@ -233,12 +238,6 @@ int JPEGDecoder::decodeFsFile(const char *pFilename) {
 	return decodeFsFile(pInFile);
 }
 
-int JPEGDecoder::decodeFsFile(const String& pFilename) {
-
-	fs::File pInFile = SPIFFS.open( pFilename, "r");
-
-	return decodeFsFile(pInFile);
-}
 
 int JPEGDecoder::decodeFsFile(fs::File jpgFile) { // This is for the SPIFFS library
 
@@ -268,13 +267,6 @@ int JPEGDecoder::decodeFsFile(fs::File jpgFile) { // This is for the SPIFFS libr
 
 	// Call specific to SD filing system in case leading / is used
 int JPEGDecoder::decodeSdFile(const char *pFilename) {
-
-	File pInFile = SD.open( pFilename, FILE_READ);
-
-	return decodeSdFile(pInFile);
-}
-
-int JPEGDecoder::decodeSdFile(const String& pFilename) {
 
 	File pInFile = SD.open( pFilename, FILE_READ);
 
@@ -338,7 +330,7 @@ int JPEGDecoder::decodeCommon(void) {
 
     decoded_width =  image_info.m_width;
     decoded_height =  image_info.m_height;
-	
+
     row_pitch = image_info.m_MCUWidth;
     pImage = new uint16_t[image_info.m_MCUWidth * image_info.m_MCUHeight];
     if (!pImage) {
@@ -372,8 +364,7 @@ void JPEGDecoder::abort(void) {
     mcu_x = 0 ;
     mcu_y = 0 ;
     is_available = 0;
-    if(pImage) delete pImage;
-	pImage = NULL;
+    delete pImage;
 	
   #ifdef LOAD_SPIFFS
 	if (jpg_source == JPEG_FS_FILE) if (g_pInFileFs) g_pInFileFs.close();

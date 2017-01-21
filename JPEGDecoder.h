@@ -22,23 +22,13 @@
 
   #include "arduino.h"
   #include <pgmspace.h>
-
-  // If the sketch has included FS.h without setting FS_NO_GLOBALS then it is likely
-  // there will be a redefinition of 'class fs::File' error due to conflict with the
-  // SD library, so we can't load the SD library.
-  #if !defined (FS_NO_GLOBALS) && defined (FS_H)
-    #undef LOAD_SD_LIBRARY
-  #endif
  
+  #define LOAD_SPIFFS
+  #define FS_NO_GLOBALS
+  #include <FS.h>
+  
   #ifdef LOAD_SD_LIBRARY
     #include <SD.h> 
-  #endif
-  
-  #define LOAD_SPIFFS
-  
-  #ifndef FS_H
-    #define FS_NO_GLOBALS
-    #include <FS.h>
   #endif
   
 #else
@@ -123,15 +113,12 @@ public:
     int read(void);
 
 	int decodeFile (const char *pFilename);
-	int decodeFile (const String& pFilename);
   #ifdef LOAD_SD_LIBRARY
     int decodeSdFile (const char *pFilename);
-    int decodeSdFile (const String& pFilename);
     int decodeSdFile (File g_pInFile);
   #endif
   #ifdef LOAD_SPIFFS
     int decodeFsFile (const char *pFilename);
-    int decodeFsFile (const String& pFilename);
 	int decodeFsFile (fs::File g_pInFile);
   #endif
     int decodeArray(const uint8_t array[], uint32_t  array_size);
