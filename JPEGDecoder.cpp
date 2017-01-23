@@ -32,6 +32,8 @@
  
  Bodmer (20/1/17): Prevent deleting the pImage pointer twice (causes an exception on ESP8266),
                    tidy up code.
+
+ Bodmer (24/1/17): Correct greyscale images, update examples
 */
 
 #include "JPEGDecoder.h"
@@ -146,6 +148,8 @@ int JPEGDecoder::read(void) {
 #endif
 						pSrcR++;
 					}
+
+					pSrcR += (8 - bx_limit);
 
 					pDst_block += row_pitch;
 				}
