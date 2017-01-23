@@ -18,7 +18,7 @@
 
 #include "Arduino.h"
 
-#ifdef ESP8266
+#if defined (ESP8266) || defined (ESP32)
 
   #include "arduino.h"
   #include <pgmspace.h>
@@ -29,16 +29,23 @@
   #if !defined (FS_NO_GLOBALS) && defined (FS_H)
     #undef LOAD_SD_LIBRARY
   #endif
- 
+
+  #ifdef ESP32  // SD library not compatible with ESP32
+    #undef LOAD_SD_LIBRARY
+  #endif
+  
   #ifdef LOAD_SD_LIBRARY
     #include <SD.h> 
   #endif
   
-  #define LOAD_SPIFFS
+  #ifndef ESP32  // ESP32 does not support SPIFFS yet
+    #define LOAD_SPIFFS
+
+    //#ifdef FS_H
+      #define FS_NO_GLOBALS
+      #include <FS.h>
+    //#endif
   
-  #ifndef FS_H
-    #define FS_NO_GLOBALS
-    #include <FS.h>
   #endif
   
 #else
@@ -78,7 +85,7 @@ private:
   #ifdef LOAD_SD_LIBRARY
     File g_pInFileSd;
   #endif
-  #ifdef LOAD_SPIFFS // For future support to ESP32 etc
+  #ifdef LOAD_SPIFFS
     fs::File g_pInFileFs;
   #endif
     pjpeg_scan_type_t scan_type;
