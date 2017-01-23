@@ -355,12 +355,17 @@ int JPEGDecoder::decodeSdFile(const char *pFilename) {
 	return decodeSdFile(pInFile);
 }
 
-int JPEGDecoder::decodeSdFile(const String& pFilename) {
 
+int JPEGDecoder::decodeSdFile(const String& pFilename) {
+#if !defined (ARDUINO_ARCH_SAM)
 	File pInFile = SD.open( pFilename, FILE_READ);
 
 	return decodeSdFile(pInFile);
+#else
+    return -1;
+#endif
 }
+
 
 int JPEGDecoder::decodeSdFile(File jpgFile) { // This is for the SD library
 

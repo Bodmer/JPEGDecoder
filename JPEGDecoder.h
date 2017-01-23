@@ -49,11 +49,11 @@
   #endif
   
 #else
-	
+
   #ifdef LOAD_SD_LIBRARY
-    #ifdef __AVR__
+    #if defined (ARDUINO_ARCH_AVR)
       #include <SD.h>    // For the Mega
-    #else
+    #elif defined (ARDUINO_ARCH_SAM)
       #include <SdFat.h> // For Due etc where we might need to bit bash the SPI
     #endif
   #endif
