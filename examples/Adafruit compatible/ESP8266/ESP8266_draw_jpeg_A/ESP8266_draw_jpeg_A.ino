@@ -86,16 +86,18 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 
-/*
+
 #define STMPE_CS 16 // D0
 #define TFT_CS   0  // D3
 #define TFT_DC   15 // D8
+#define TFT_RST  -1 // Not used
 #define SD_CS    2  // D4
-*/
 
+/*
 #define TFT_CS   D8  // Chip select control pin
 #define TFT_DC   D3  // Data Command control pin
 #define TFT_RST  D4  // Reset pin (could connect to Arduino RESET pin)
+*/
 
 #define TFT_BLACK 0
 

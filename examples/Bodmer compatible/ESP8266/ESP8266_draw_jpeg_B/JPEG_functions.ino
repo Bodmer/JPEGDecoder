@@ -13,15 +13,17 @@
 
   As above, 160MHz CPU clock:
    SPI    
-  80Mhz   264 ms
-  40Mhz   278 ms
-  20Mhz   309 ms
+  80Mhz   229 ms
+  40Mhz   248 ms
+  20Mhz   276 ms
 
   The ILI9341 displays are designed to run at 20MHz maximum SPI clock, they seem to
   run reliably at 40MHz, but occasional pixel coruption sometimes occurs at 80MHz.
 
   Created by Bodmer 15th Jan 2017
   ==================================================================================*/
+
+#define minimum(a,b)     (((a) < (b)) ? (a) : (b))
 
 //====================================================================================
 //   This function opens the Filing System Jpeg image file and primes the decoder
@@ -56,58 +58,42 @@ void renderJPEG(int xpos, int ypos) {
 
   jpegInfo();
   
-  uint16_t  *pImg;
+  uint8_t  *pImg;
   uint16_t mcu_w = JpegDec.MCUWidth;
   uint16_t mcu_h = JpegDec.MCUHeight;
-  uint32_t mcu_pixels = mcu_w * mcu_h;
-  
+  uint32_t max_x = JpegDec.width;
+  uint32_t max_y = JpegDec.height;
+
+  uint32_t min_w = minimum(mcu_w, max_x % mcu_w);
+  uint32_t min_h = minimum(mcu_h, max_y % mcu_h);
+
+  uint32_t win_w = mcu_w;
+  uint32_t win_h = mcu_h;
+
   uint32_t drawTime = millis();
 
-  while ( JpegDec.read()) {
+  max_x += xpos;
+  max_y += ypos;
 
-    pImg = JpegDec.pImage;
+  while ( JpegDec.readSwappedBytes()) {
+
+    pImg = (uint8_t*)JpegDec.pImage;
     int mcu_x = JpegDec.MCUx * mcu_w + xpos;
     int mcu_y = JpegDec.MCUy * mcu_h + ypos;
 
-    if ( ( mcu_x + mcu_w) <= tft.width() && ( mcu_y + mcu_h) <= tft.height()) {
+    if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
+    else win_w = min_w;
+    if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
+    else win_h = min_h;
 
-      tft.setAddrWindow(mcu_x, mcu_y, mcu_x + mcu_w - 1, mcu_y + mcu_h - 1);
+    uint32_t mcu_pixels = win_w * win_h;
 
-      // Baboon40 draws in 423 ms
-      // Use this method with SWAP_BYTES defined in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels * 2;
-      //uint8_t  *pImg8;
-      //pImg8 = (uint8_t*)pImg;
-      //while (count--) SPI.write(*pImg8++); // Send to TFT 1 byte at a time
-
-      // Baboon40 draws in 368 ms
-      // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels;
-      //while (count--) tft.pushColor(*pImg++); // Send to TFT 16 bits at a time
-
-      // Baboon40 draws in 350 ms
-      // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels;
-      //while (count--) SPI.write16(*pImg++); // Send to TFT 16 bits at a time
-
-      // Baboon40 draws in 278 ms
-      // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels / 2;
-      //uint32_t  *pImg32;
-      //pImg32 = (uint32_t*)pImg;
-      //while (count--) SPI.write32(*pImg32++, 1); // Send to TFT in 32 bit chucks to speed things up
-
-      // Baboon40 draws in 243 ms
-      // Use this method with SWAP_BYTES defined in User_Config.h (inside JPEGDecoder library)
-      uint32_t count = mcu_pixels * 2;
-      uint8_t   *pImg8;
-      pImg8 = (uint8_t*)pImg;
-      while ( count >=64 ) {SPI.writePattern(pImg8, 64, 1); pImg8 += 64; count -= 64; }
-      if (count) SPI.writePattern(pImg8, count, 1);
-    
+    if ( ( mcu_x + win_w) <= tft.width() && ( mcu_y + win_h) <= tft.height()){
+      tft.setWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
+      tft.pushColors(pImg, mcu_pixels * 2);    // pushColors via 64 byte SPI port buffer
     }
 
-    else if ( ( mcu_y + mcu_h) >= tft.height()) JpegDec.abort();
+    else if ( ( mcu_y + win_h) >= tft.height()) JpegDec.abort();
 
   }
 
