@@ -45,24 +45,13 @@
 // >>>> Note: This works OK with IDE 1.6.7 but might produce errors with other IDE versions. <<<<
 // >>>> If you get errors here then edit or comment out the lines not needed.                <<<<
 
-#ifdef __AVR__
+
+#if defined (ARDUINO_ARCH_AVR)
   // Mega libraries
   #include <SD.h>                // Use the SD library for the Mega
   #include <TFT_HX8357.h>        // Hardware-specific Mega library
   TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
-
-#endif
-
-#ifdef ESP8266
-
-#include <SD.h>                // Use the SD library for the Mega
- #define TFT_DC 4
-#define TFT_CS 5
-#include <Arduino.h>
-#include <Adafruit_ILI9341.h>
-Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
-
-#else
+#elif defined (ARDUINO_ARCH_SAM)
   // Due libraries
   #include <SdFat.h>             // Use the SdFat library for the Due
   SdFat SD;                      // Permit SD function call for the Due
@@ -74,11 +63,7 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC);
 #include <JPEGDecoder.h>
 
 // Chip Select Pin for SD card
-#ifdef __AVR__
 byte SD_CS = 53; //Mega256 requirement
-#else
-byte SD_CS = 15; // 0 to 16 
-#endif
 
 // Count how many times the image is drawn for test purposes
 uint32_t icount = 0;
@@ -174,12 +159,22 @@ void renderJPEG(int xpos, int ypos) {
 
   //jpegInfo(); // Print information from the JPEG file (could comment this line out)
 
-  uint16_t  *pImg;
-  uint16_t mcu_w = JpegDec.MCUWidth;    // Width of MCU
-  uint16_t mcu_h = JpegDec.MCUHeight;   // Height of MCU
-  uint32_t mcu_pixels = mcu_w * mcu_h;  // Total number of pixels in an MCU
+  uint16_t *pImg;
+  uint16_t mcu_w = JpegDec.MCUWidth;
+  uint16_t mcu_h = JpegDec.MCUHeight;
+  uint32_t max_x = JpegDec.width;
+  uint32_t max_y = JpegDec.height;
 
-  uint32_t drawTime = millis(); // For comparison purpose the draw time is measured
+  uint32_t min_w = min(mcu_w, max_x % mcu_w);
+  uint32_t min_h = min(mcu_h, max_y % mcu_h);
+
+  uint32_t win_w = mcu_w;
+  uint32_t win_h = mcu_h;
+
+  uint32_t drawTime = millis();
+
+  max_x += xpos;
+  max_y += ypos;
 
   // Fetch data from the file, decode and display
   while (JpegDec.read()) {    // While there is more data in the file
@@ -188,14 +183,20 @@ void renderJPEG(int xpos, int ypos) {
     int mcu_x = JpegDec.MCUx * mcu_w + xpos;  // Calculate coordinates of top left corner of current MCU
     int mcu_y = JpegDec.MCUy * mcu_h + ypos;
 
-    if ((mcu_x + mcu_w) <= tft.width() && (mcu_y + mcu_h) <= tft.height())
+    if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
+    else win_w = min_w;
+    if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
+    else win_h = min_h;
+
+    uint32_t mcu_pixels = win_w * win_h;
+
+    if (( mcu_x + win_w ) <= tft.width() && ( mcu_y + win_h ) <= tft.height())
     {
       // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
-      tft.setWindow(mcu_x, mcu_y, mcu_x + mcu_w - 1, mcu_y + mcu_h - 1);
+      tft.setWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
 
       // Push all MCU pixels to the TFT window
-      uint32_t count = mcu_pixels;
-      while (count--) {
+      while (mcu_pixels--) {
         // Push each pixel to the TFT MCU area
         tft.pushColor(*pImg++);
       }
@@ -204,7 +205,7 @@ void renderJPEG(int xpos, int ypos) {
       // tft.pushColor16(pImg, mcu_pixels); //  To be supported in HX8357 library at a future date
 
     }
-    else if ((mcu_y + mcu_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
+    else if ( (mcu_y + win_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
   }
 
   showTime(millis() - drawTime); // These lines are for sketch testing only

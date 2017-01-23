@@ -6,7 +6,7 @@
 
 // Adapted to display images on a 480 x 320 HX8357 or ILI9481
 // 16 bit parallel TFT by Bodmer (aka rowboteer)
-// Version 0.09b 15/2/16
+// Version 0.10c 23/1/17
 
 // Renders images stored in an array in program (FLASH)
 // JPEG images are stored in header files (see jpeg1.h etc)
@@ -42,31 +42,17 @@
 
 #include <SPI.h>
 #include <arduino.h>
-#ifdef ESP8266
-
-void setup(){
-  
-  Serial.begin(115200);
-  Serial.println("\r\n\r\nThis one is not compatible with ESP8266 for structural reason. Use the TFT_SPIFF_jpeg_v3 example to use your Flash.");
-
-}
-
-void loop(){yield();}
-
-#else
 
 // Next the libraries are selected depending on whether it is an AVR (Mega) or otherwise a Due
-// >>>> Note: This works OK with IDE 1.6.7 but might produce errors with other IDE versions. <<<<
-// >>>> If you get errors here then edit or comment out the lines not needed.                <<<<
 
-#ifdef __AVR__
-// Mega libraries
-#include <TFT_HX8357.h>        // Hardware-specific Mega library
-TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
-#else
-// Due libraries
-#include <TFT_HX8357_Due.h>    // Hardware-specific Due library
-TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
+#if defined (ARDUINO_ARCH_AVR)
+  // Mega libraries
+  #include <TFT_HX8357.h>        // Hardware-specific Mega library
+  TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
+#elif defined (ARDUINO_ARCH_SAM)
+  // Due libraries
+  #include <TFT_HX8357_Due.h>    // Hardware-specific Due library
+  TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
 #endif
 
 // JPEG decoder library
@@ -77,13 +63,10 @@ TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
 
 // Include the sketch header file that contains the image stored as an array of bytes
 // More than one image array could be stored in each header file.
-
 #include "jpeg1.h"
 #include "jpeg2.h"
 #include "jpeg3.h"
 #include "jpeg4.h"
-
-
 
 // Count how many times the image is drawn for test purposes
 uint32_t icount = 0;
@@ -148,15 +131,6 @@ void drawArrayJpeg(const uint8_t arrayname[], uint32_t array_size, int xpos, int
   renderJPEG(x, y);
   
   Serial.println("#########################");
-
-  JpegDec.decodeArray(arrayname, array_size);
-  renderScaledJPEG(x, y, 2);
-  JpegDec.decodeArray(arrayname, array_size);
-  renderScaledJPEG(x, y, 4);
-  JpegDec.decodeArray(arrayname, array_size);
-  renderScaledJPEG(x, y, 8);
-
-  Serial.println("@@@@@@@@@@@@@@@@@@@@@@@@@");
 }
 
 //####################################################################################################
@@ -169,13 +143,21 @@ void renderJPEG(int xpos, int ypos) {
   //jpegInfo(); // Print information from the JPEG file (could comment this line out)
 
   uint16_t *pImg;
-  uint16_t mcu_w = JpegDec.MCUWidth;    // Width of MCU
-  uint16_t mcu_h = JpegDec.MCUHeight;   // Height of MCU
-  uint32_t mcu_pixels = mcu_w * mcu_h;  // Total number of pixels in an MCU
+  uint16_t mcu_w = JpegDec.MCUWidth;
+  uint16_t mcu_h = JpegDec.MCUHeight;
+  uint32_t max_x = JpegDec.width;
+  uint32_t max_y = JpegDec.height;
 
- // Serial.print("comp size = ");Serial.println(comp_size);
-  
-  uint32_t drawTime = millis(); // For comparison purpose the draw time is measured
+  uint32_t min_w = min(mcu_w, max_x % mcu_w);
+  uint32_t min_h = min(mcu_h, max_y % mcu_h);
+
+  uint32_t win_w = mcu_w;
+  uint32_t win_h = mcu_h;
+
+  uint32_t drawTime = millis();
+
+  max_x += xpos;
+  max_y += ypos;
 
   // Fetch data from the file, decode and display
   while (JpegDec.read()) {    // While there is more data in the file
@@ -184,14 +166,20 @@ void renderJPEG(int xpos, int ypos) {
     int mcu_x = JpegDec.MCUx * mcu_w + xpos;  // Calculate coordinates of top left corner of current MCU
     int mcu_y = JpegDec.MCUy * mcu_h + ypos;
 
-    if ((mcu_x + mcu_w) <= tft.width() && (mcu_y + mcu_h) <= tft.height())
+    if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
+    else win_w = min_w;
+    if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
+    else win_h = min_h;
+
+    uint32_t mcu_pixels = win_w * win_h;
+
+    if (( mcu_x + win_w ) <= tft.width() && ( mcu_y + win_h ) <= tft.height())
     {
       // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
-      tft.setWindow(mcu_x, mcu_y, mcu_x + mcu_w - 1, mcu_y + mcu_h - 1);
+      tft.setWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
 
       // Push all MCU pixels to the TFT window
-      uint32_t count = mcu_pixels;
-      while (count--) {
+      while (mcu_pixels--) {
         // Push each pixel to the TFT MCU area
         tft.pushColor(*pImg++);
       }
@@ -200,77 +188,9 @@ void renderJPEG(int xpos, int ypos) {
       // tft.pushColor16(pImg, mcu_pixels); //  To be supported in HX8357 library at a future date
 
     }
-    else if ((mcu_y + mcu_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
+    else if ( (mcu_y + win_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
   }
 
-  showTime(millis() - drawTime); // These lines are for sketch testing only
-  //Serial.print(" Draw count:");
-  //Serial.println(icount++);
-}
-
-//####################################################################################################
-// Draw a scaled JPEG on the TFT, images will be cropped on the right/bottom sides if they do not fit
-//####################################################################################################
-// This function assumes xpos,ypos is a valid screen coordinate. For convenience images that do not
-// fit totally on the screen are cropped to the nearest MCU size and may leave right/bottom borders.
-
-// Images are scaled 1:N so if scale = 2 the image is drawn half size, 4 quarter size, 8 eighth size
-
-void renderScaledJPEG(int xpos, int ypos, uint8_t scale) {
-
-  jpegInfo(); // Print information from the JPEG file (could comment this line out)
-
-  if ((scale !=1) && (scale !=2) && (scale !=4) && (scale !=8)) return; // Image size reduction factors of 1, 2, 4 and 8 supported
-
-  uint16_t  *pImg;
-  uint16_t mcu_w = JpegDec.MCUWidth;    // Width of MCU
-  uint16_t mcu_h = JpegDec.MCUHeight;   // Height of MCU
-
-  uint32_t drawTime = millis(); // For comparison purpose the draw time is measured
-
-  // Fetch data from the file, decode and display
-  while (JpegDec.read()) {    // While there is more data in the file
-    pImg = JpegDec.pImage;    // Decode a MCU (Minimum Coding Unit, typically a 8x8 or 16x16 pixel block)
-
-    int mcu_x = JpegDec.MCUx * mcu_w / scale + xpos; // Calculate coordinates of top left corner of current MCU
-    int mcu_y = JpegDec.MCUy * mcu_h / scale + ypos;
-
-    if ((mcu_x + mcu_w) <= tft.width() && (mcu_y + mcu_h) <= tft.height())
-    {
-      // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
-      tft.setWindow(mcu_x, mcu_y, mcu_x + mcu_w / scale - 1, mcu_y + mcu_h / scale - 1);
-      // Push all MCU pixels to the TFT window
-      for (uint8_t yp = 0; yp < mcu_h; yp += scale) {
-        for (uint8_t xp = 0; xp < mcu_w; xp += scale) {
-          // Push each pixel to the TFT MCU area
-          // The pImg [B]lue, [G]reen and [R]ed  8 bit array values are
-          // converted to 5+6+5 [B]+[G]+[R] 16 bit format)
-
-          uint16_t red   = 0;
-          uint16_t green = 0;
-          uint16_t blue  = 0;
-
-          for (uint8_t ya = 0; ya < scale; ya++) {
-            for (uint8_t xa = 0; xa < scale; xa ++ ) {
-              red  += *pImg >> 11;
-              green += (*pImg & 0x7E0) >> 5;
-              blue   += *pImg & 0x1F;
-            }
-          }
-
-          if (scale == 1) tft.pushColor(blue >> 0 | ((green << 5) & 0x7E0) | ((red << 11) & 0xF800));
-          if (scale == 2) tft.pushColor(blue >> 2 | ((green << 3) & 0x7E0) | ((red << 9) & 0xF800));
-          if (scale == 4) tft.pushColor(blue >> 4 | ((green << 1) & 0x7E0) | ((red << 7) & 0xF800));
-          if (scale == 8) tft.pushColor(blue >> 6 | ((green >> 1) & 0x7E0) | ((red << 5) & 0xF800));
-          
-          // Goto the next decoded pixel block
-          pImg += scale;
-        }
-        pImg += (scale-1) * mcu_w;
-      }
-    }
-    else if ((mcu_y + mcu_h) >= tft.height()) JpegDec.abort(); // Image has run off bottom of screen so abort decoding
-  }
   showTime(millis() - drawTime); // These lines are for sketch testing only
   //Serial.print(" Draw count:");
   //Serial.println(icount++);
@@ -325,6 +245,4 @@ void showTime(uint32_t msTime) {
   Serial.print(msTime);
   Serial.println(F(" ms "));
 }
-
-#endif
 
