@@ -146,6 +146,8 @@ int JPEGDecoder::read(void) {
 #endif
 						pSrcR++;
 					}
+
+					pDst_block += row_pitch;
 				}
             }
             else {
