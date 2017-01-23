@@ -187,6 +187,81 @@ int JPEGDecoder::read(void) {
     return 1;
 }
 
+int JPEGDecoder::readSwappedBytes(void) {
+    int y, x;
+    uint16_t *pDst_row;
+
+    if(is_available == 0 || mcu_y >= image_info.m_MCUSPerCol) {
+		abort();
+		return 0;
+	}
+	
+    // Copy MCU's pixel blocks into the destination bitmap.
+    pDst_row = pImage;
+    for (y = 0; y < image_info.m_MCUHeight; y += 8) {
+
+	    const int by_limit = jpg_min(8, image_info.m_height - (mcu_y * image_info.m_MCUHeight + y));
+
+        for (x = 0; x < image_info.m_MCUWidth; x += 8) {
+            uint16_t *pDst_block = pDst_row + x;
+
+            // Compute source byte offset of the block in the decoder's MCU buffer.
+            uint src_ofs = (x * 8U) + (y * 16U);
+            const uint8_t *pSrcR = image_info.m_pMCUBufR + src_ofs;
+            const uint8_t *pSrcG = image_info.m_pMCUBufG + src_ofs;
+            const uint8_t *pSrcB = image_info.m_pMCUBufB + src_ofs;
+
+	        const int bx_limit = jpg_min(8, image_info.m_width - (mcu_x * image_info.m_MCUWidth + x));
+
+            if (image_info.m_scanType == PJPG_GRAYSCALE) {
+                int bx, by;
+                for (by = 0; by < by_limit; by++) {
+                    uint16_t *pDst = pDst_block;
+
+					for (bx = 0; bx < bx_limit; bx++) {
+
+                        *pDst++ = (*pSrcR & 0xF8) | (*pSrcR & 0xE0) >> 5 | (*pSrcR & 0xF8) << 5 | (*pSrcR & 0x1C) << 11;
+
+						pSrcR++;
+					}
+				}
+            }
+            else {
+                int bx, by;
+                for (by = 0; by < by_limit; by++) {
+                    uint16_t *pDst = pDst_block;
+
+                    for (bx = 0; bx < bx_limit; bx++) {
+
+                        *pDst++ = (*pSrcR & 0xF8) | (*pSrcG & 0xE0) >> 5 | (*pSrcB & 0xF8) << 5 | (*pSrcG & 0x1C) << 11;
+
+                        pSrcR++; pSrcG++; pSrcB++;
+                    }
+
+                    pSrcR += (8 - bx_limit);
+                    pSrcG += (8 - bx_limit);
+                    pSrcB += (8 - bx_limit);
+
+                    pDst_block += row_pitch;
+                }
+            }
+        }
+        pDst_row += (row_pitch * 8);
+    }
+
+    MCUx = mcu_x;
+    MCUy = mcu_y;
+
+    mcu_x++;
+    if (mcu_x == image_info.m_MCUSPerRow) {
+        mcu_x = 0;
+        mcu_y++;
+    }
+
+    if(decode_mcu()==-1) is_available = 0 ;
+
+    return 1;
+}
 
 
 	// Generic file call for SD or SPIFFS, uses leading / to distinguish SPIFFS files

@@ -121,7 +121,8 @@ public:
 
     int available(void);
     int read(void);
-
+    int readSwappedBytes(void);
+	
 	int decodeFile (const char *pFilename);
 	int decodeFile (const String& pFilename);
   #ifdef LOAD_SD_LIBRARY

@@ -1,19 +1,7 @@
-#######################################
-# Syntax Coloring Map For JPEGDecoder
-#######################################
+JPEGDecoder	KEYWORD1	JPEGDecoder
 
-#######################################
-# Datatypes (KEYWORD1)
-#######################################
-
-JpegDec	KEYWORD1
-
-#######################################
-# Methods and Functions (KEYWORD2)
-#######################################
-
+JpegDec	KEYWORD2
 pImage	KEYWORD2
-thisPtr	KEYWORD2
 width	KEYWORD2
 height	KEYWORD2
 comps	KEYWORD2
@@ -33,10 +21,7 @@ decodeArray	KEYWORD2
 available	KEYWORD2
 abort	KEYWORD2
 read	KEYWORD2
-
-#######################################
-# Constants (LITERAL1)
-#######################################
+readSwappedBytes	KEYWORD2
 
 PJPG_GRAYSCALE	LITERAL1
 PJPG_YH1V1	LITERAL1

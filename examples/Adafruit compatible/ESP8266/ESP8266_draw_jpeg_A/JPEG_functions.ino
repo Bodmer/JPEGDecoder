@@ -45,6 +45,7 @@ void drawFSJpeg(const char *filename, int xpos, int ypos) {
   //JpegDec.decodeFsFile(jpgFile); // We can pass the SPIFFS file handle to the decoder,
   //JpegDec.decodeSdFile(jpgFile); // or we can pass the SD file handle to the decoder,
   JpegDec.decodeFsFile(filename);  // or we can pass the filename (leading / distinguishes SPIFFS files)
+                                   // The filename can be a String or character array
 
   renderJPEG(xpos, ypos); //Now render to screen, coord datum is the top left corner
 }
@@ -73,38 +74,10 @@ void renderJPEG(int xpos, int ypos) {
 
       tft.setAddrWindow(mcu_x, mcu_y, mcu_x + mcu_w - 1, mcu_y + mcu_h - 1);
 
-      // Baboon40 draws in 423 ms
-      // Use this method with SWAP_BYTES defined in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels * 2;
-      //uint8_t  *pImg8;
-      //pImg8 = (uint8_t*)pImg;
-      //while (count--) SPI.write(*pImg8++); // Send to TFT 1 byte at a time
-
-      // Baboon40 draws in 368 ms
+      // Baboon40 draws in 731 ms
       // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels;
-      //while (count--) tft.pushColor(*pImg++); // Send to TFT 16 bits at a time
-
-      // Baboon40 draws in 350 ms
-      // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels;
-      //while (count--) SPI.write16(*pImg++); // Send to TFT 16 bits at a time
-
-      // Baboon40 draws in 278 ms
-      // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      //uint32_t count = mcu_pixels / 2;
-      //uint32_t  *pImg32;
-      //pImg32 = (uint32_t*)pImg;
-      //while (count--) SPI.write32(*pImg32++, 1); // Send to TFT in 32 bit chucks to speed things up
-
-      // Baboon40 draws in 243 ms
-      // Use this method with SWAP_BYTES defined in User_Config.h (inside JPEGDecoder library)
-      uint32_t count = mcu_pixels * 2;
-      uint8_t   *pImg8;
-      pImg8 = (uint8_t*)pImg;
-      while ( count >=64 ) {SPI.writePattern(pImg8, 64, 1); pImg8 += 64; count -= 64; }
-      if (count) SPI.writePattern(pImg8, count, 1);
-    
+      uint32_t count = mcu_pixels;
+      while (count--) tft.pushColor(*pImg++); // Send to TFT 16 bits at a time
     }
 
     else if ( ( mcu_y + mcu_h) >= tft.height()) JpegDec.abort();

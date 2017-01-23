@@ -14,12 +14,9 @@
   3 Mbyte SPIFS partition can be used, in which case it can contain ~18 full screen
   320 x 240 raw images (150 Kbytes each).
 
-  The NodeMCU, TFT and sketch works with TFT_ILI9341_ESP library here:
-  https://github.com/Bodmer/TFT_ILI9341_ESP
-
-  Configure the SPI speed to 40MHz maximum in the User_Setup file within the
-  TFT_ILI9341_ESP library folder. It *may* work at 80MHz, but typically pixels get lost
-  or spurious extra pixels are plotted at very high SPI clock rates.
+  The NodeMCU, TFT and sketch works with the libraries here:
+  https://github.com/adafruit/Adafruit-GFX-Library
+  https://github.com/adafruit/Adafruit_ILI9341
 
   The Jpeg library can be found here:
    https://github.com/Bodmer/JPEGDecoder
@@ -29,8 +26,12 @@
 
   Place the images inside the sketch folder, in a folder called "Data".  Then upload
   all the files in the folder using the Arduino IDE "ESP8266 Sketch Data Upload" option
-  in the "Tools" menu.  This takes some time, but the SPIFFS content is not altered
-  when a new sketch is uploaded, so there is no need to upload the same files again!
+  in the "Tools" menu:
+  http://www.esp8266.com/viewtopic.php?f=32&t=10081
+  https://github.com/esp8266/arduino-esp8266fs-plugin/releases
+  
+  This takes some time, but the SPIFFS content is not altered when a new sketch is
+  uploaded, so there is no need to upload the same files again!
   Note: If open, you must close the "Serial Monitor" window for it to upload!
 
   The IDE will not copy the "data" folder with the sketch if you save the sketch under
@@ -79,12 +80,28 @@
 // JPEG decoder library
 #include <JPEGDecoder.h>
 
-// Call up the TFT library
-#include <TFT_ILI9341_ESP.h> // Hardware-specific library
+#include <SPI.h>
 
-// Invoke TFT library, pins and settings are defined in "User_Setup.h" in the library folder
-// See "User_Setup.h" for default hardware SPI pins (NodeMCU pin naming convention is used)
-TFT_ILI9341_ESP tft = TFT_ILI9341_ESP();
+// Call up the TFT libraries
+#include <Adafruit_GFX.h>
+#include <Adafruit_ILI9341.h>
+
+/*
+#define STMPE_CS 16 // D0
+#define TFT_CS   0  // D3
+#define TFT_DC   15 // D8
+#define SD_CS    2  // D4
+*/
+
+#define TFT_CS   D8  // Chip select control pin
+#define TFT_DC   D3  // Data Command control pin
+#define TFT_RST  D4  // Reset pin (could connect to Arduino RESET pin)
+
+#define TFT_BLACK 0
+
+// Invoke TFT library with TFT signal pins
+Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
+
 
 //====================================================================================
 //                                    Setup
@@ -92,6 +109,9 @@ TFT_ILI9341_ESP tft = TFT_ILI9341_ESP();
 void setup()
 {
   Serial.begin(115200); // Used for messages
+
+  delay(10);
+  Serial.println("FeatherWing decoder test!");
 
   tft.begin();
   tft.setRotation(0);  // 0 & 2 Portrait. 1 & 3 landscape
