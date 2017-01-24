@@ -40,26 +40,22 @@ https://github.com/Bodmer/JPEGDecoder
 
 		#ifndef ESP32  // ESP32 does not support SPIFFS yet
 			#define LOAD_SPIFFS
-
-//#ifdef FS_H
 			#define FS_NO_GLOBALS
 			#include <FS.h>
-//#endif
-
-	#endif
-
-#else
-
-	#ifdef LOAD_SD_LIBRARY
-		#if defined (ARDUINO_ARCH_AVR)
-			#include <SD.h>    // For the Mega
-		#elif defined (ARDUINO_ARCH_SAM)
-			#include <SdFat.h> // For Due etc where we might need to bit bash the SPI
 		#endif
+
+	#else
+
+		#ifdef LOAD_SD_LIBRARY
+			#if defined (ARDUINO_ARCH_AVR)
+				#include <SD.h>    // For the Mega
+			#elif defined (ARDUINO_ARCH_SAM)
+				#include <SdFat.h> // For Due etc where we might need to bit bash the SPI
+			#endif
+		#endif
+
 	#endif
-
-#endif
-
+	
 #include "picojpeg.h"
 
 enum {
