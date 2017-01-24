@@ -1,4 +1,15 @@
-JPEGDecoder	KEYWORD1	JPEGDecoder
+#######################################
+# Syntax Coloring Map For WiFi
+#######################################
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+JPEGDecoder	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
 
 JpegDec	KEYWORD2
 pImage	KEYWORD2
@@ -23,8 +34,3 @@ abort	KEYWORD2
 read	KEYWORD2
 readSwappedBytes	KEYWORD2
 
-PJPG_GRAYSCALE	LITERAL1
-PJPG_YH1V1	LITERAL1
-PJPG_YH2V1	LITERAL1
-PJPG_YH1V2	LITERAL1
-PJPG_YH2V2	LITERAL1
