@@ -1,7 +1,7 @@
 /*====================================================================================
 
   This sketch demonstrates loading images which have been stored as files in the
-  built-in FLASH memory on a NodeMCU (ESP8266 based) rendering them on a TFT screen
+  built-in FLASH memory on a Adafruit Huzzah(ESP8266 based) rendering them on a TFT screen
   that uses a ILI9341 driver chip with SPI interface.
 
   The images are stored in the SPI FLASH Filing System (SPIFFS), which effectively
@@ -19,7 +19,7 @@
   https://github.com/adafruit/Adafruit_ILI9341
 
   The Jpeg library can be found here:
-   https://github.com/Bodmer/JPEGDecoder
+  https://github.com/Bodmer/JPEGDecoder
  
   Images in the Jpeg format can be created using Paint or IrfanView or other picture
   editting software.
@@ -62,7 +62,7 @@
   in the TFT library User_Config.h file as negative so the library ignores it,
   e.g. TFT_RST -1
 
-  Created by Bodmer 14th Jan 2017 - Tested in Arduino IDE 1.8.0 esp8266 Core 2.3.0
+  Created by Bodmer 24th Jan 2017 - Tested in Arduino IDE 1.8.0 esp8266 Core 2.3.0
   ==================================================================================*/
 
 //====================================================================================
