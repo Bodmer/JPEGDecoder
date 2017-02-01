@@ -25,5 +25,5 @@
     }
   ],
   "frameworks": "arduino",
-  "platforms": "atmelavr","atmelsam","espressif8266"
+  "platforms": ["atmelavr","atmelsam","espressif8266"]
 }
