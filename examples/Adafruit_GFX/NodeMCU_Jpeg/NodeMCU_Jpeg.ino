@@ -1,8 +1,8 @@
 /*====================================================================================
 
   This sketch demonstrates loading images which have been stored as files in the
-  built-in FLASH memory on a Adafruit Huzzah(ESP8266 based) rendering them on a TFT screen
-  that uses a ILI9341 driver chip with SPI interface.
+  built-in FLASH memory on a NodeMCU 1.0 (ESP8266 based, ESP-12E Module) rendering the
+  images onto a ILI9341 SPI 320 x 240 pixel TFT screen.
 
   The images are stored in the SPI FLASH Filing System (SPIFFS), which effectively
   functions like a tiny "hard drive". This filing system is built into the ESP8266
@@ -12,7 +12,7 @@
   The size of the SPIFFS partition can be set in the IDE as 1Mbyte or 3Mbytes. Either
   will work with this sketch. Typically most sketches easily fit within 1 Mbyte so a
   3 Mbyte SPIFS partition can be used, in which case it can contain ~18 full screen
-  320 x 240 raw images (150 Kbytes each).
+  320 x 240 raw images (150 Kbytes each) or 100's of Jpeg full screem images.
 
   The NodeMCU, TFT and sketch works with the libraries here:
   https://github.com/adafruit/Adafruit-GFX-Library
@@ -32,7 +32,7 @@
   
   This takes some time, but the SPIFFS content is not altered when a new sketch is
   uploaded, so there is no need to upload the same files again!
-  Note: If open, you must close the "Serial Monitor" window for it to upload!
+  Note: If open, you must close the "Serial Monitor" window to upload data to SPIFFS!
 
   The IDE will not copy the "data" folder with the sketch if you save the sketch under
   another name. It is necessary to manually make a copy and place it in the sketch
@@ -66,11 +66,6 @@
   ==================================================================================*/
 
 //====================================================================================
-//                                  Definitions
-//====================================================================================
-
-
-//====================================================================================
 //                                  Libraries
 //====================================================================================
 // Call up the SPIFFS FLASH filing system this is part of the ESP Core
@@ -80,24 +75,16 @@
 // JPEG decoder library
 #include <JPEGDecoder.h>
 
+// SPI library, built into IDE
 #include <SPI.h>
 
 // Call up the TFT libraries
 #include <Adafruit_GFX.h>
 #include <Adafruit_ILI9341.h>
 
-
-#define STMPE_CS 16 // D0
-#define TFT_CS   0  // D3
-#define TFT_DC   15 // D8
-#define TFT_RST  -1 // Not used
-#define SD_CS    2  // D4
-
-/*
 #define TFT_CS   D8  // Chip select control pin
 #define TFT_DC   D3  // Data Command control pin
 #define TFT_RST  D4  // Reset pin (could connect to Arduino RESET pin)
-*/
 
 #define TFT_BLACK 0
 
@@ -110,10 +97,10 @@ Adafruit_ILI9341 tft = Adafruit_ILI9341(TFT_CS, TFT_DC, TFT_RST);
 //====================================================================================
 void setup()
 {
-  Serial.begin(115200); // Used for messages
+  Serial.begin(250000); // Used for messages and the C array generator
 
   delay(10);
-  Serial.println("FeatherWing decoder test!");
+  Serial.println("NodeMCU decoder test!");
 
   tft.begin();
   tft.setRotation(0);  // 0 & 2 Portrait. 1 & 3 landscape
@@ -139,25 +126,25 @@ void loop()
   tft.setRotation(0);  // portrait
   tft.fillScreen(random(0xFFFF));
 
-  drawFSJpeg("/EagleEye.jpg", 0, 0);
-  delay(2000);
-
-  // This is quite a famous picture used for testing image compression algorithms
-  drawFSJpeg("/lena20k.jpg", 0, 0);
+  drawJpeg("/EagleEye.jpg", 0, 0);
   delay(2000);
 
   //tft.fillScreen(random(0xFFFF));
-  drawFSJpeg("/Baboon40.jpg", 0, 0);
+  drawJpeg("/BaboonP.jpg", 0, 0);
   delay(2000);
 
   tft.setRotation(1);  // landscape
   //tft.fillScreen(random(0xFFFF));
-  drawFSJpeg("/Mouse480.jpg", 0, 0);
+  drawJpeg("/Mouse.jpg", 0, 0);
   delay(2000);
 
   //tft.fillScreen(random(0xFFFF));
-  drawFSJpeg("/Baboon20.jpg", 0, 0);
+  drawJpeg("/BaboonL.jpg", 0, 0);
   delay(2000);
+
+  createArray("/EagleEye.jpg");
+  delay(2000);
+  while(1) yield(); // Stay here
 }
 //====================================================================================
 

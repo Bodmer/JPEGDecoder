@@ -1,28 +1,10 @@
 /*====================================================================================
-
-   There is limited clipping, images that don't fit within the screen boundaries might
-   appear corrupted. Crop the image (in say Paint on Windows OS) before converting to
-   Jpeg format, or position image so it does not go off the screen.
-
-  Rendering time in milliseconds .v. SPI frequency (buffer size = 512) and encoding format
-  240 x 320 Baboon40 image, 80MHz CPU clock:
-   SPI    
-  80Mhz   490 ms
-  40Mhz   507 ms
-  20Mhz   541 ms
-
-  As above, 160MHz CPU clock:
-   SPI    
-  80Mhz   264 ms
-  40Mhz   278 ms
-  20Mhz   309 ms
-
-  The ILI9341 displays are designed to run at 20MHz maximum SPI clock, they seem to
-  run reliably at 40MHz, but occasional pixel coruption sometimes occurs at 80MHz.
+  This sketch contains support functions to render the Jpeg images.
 
   Created by Bodmer 15th Jan 2017
   ==================================================================================*/
 
+// Return the minimum of two values a and b
 #define minimum(a,b)     (((a) < (b)) ? (a) : (b))
 
 //====================================================================================
@@ -34,8 +16,8 @@ void drawFSJpeg(const char *filename, int xpos, int ypos) {
   Serial.print("Drawing file: "); Serial.println(filename);
   Serial.println("=====================================");
 
-  // Open the file, the decoder library will close it
-  fs::File jpgFile = SPIFFS.open( filename, "r");  // File handle reference for SPIFFS
+  // Open the file (the Jpeg decoder library will close it)
+  fs::File jpgFile = SPIFFS.open( filename, "r");    // File handle reference for SPIFFS
   //  File jpgFile = SD.open( filename, FILE_READ);  // or, file handle reference for SD library
  
   if ( !jpgFile ) {
@@ -44,65 +26,91 @@ void drawFSJpeg(const char *filename, int xpos, int ypos) {
   }
 
   // To initialise the decoder and provide the file, we can use one of the three following methods:
-  //JpegDec.decodeFsFile(jpgFile); // We can pass the SPIFFS file handle to the decoder,
-  //JpegDec.decodeSdFile(jpgFile); // or we can pass the SD file handle to the decoder,
-  JpegDec.decodeFsFile(filename);  // or we can pass the filename (leading / distinguishes SPIFFS files)
-                                   // The filename can be a String or character array
-  renderJPEG(xpos, ypos); //Now render to screen, coord datum is the top left corner
+  //boolean decoded = JpegDec.decodeFsFile(jpgFile); // We can pass the SPIFFS file handle to the decoder,
+  //boolean decoded = JpegDec.decodeSdFile(jpgFile); // or we can pass the SD file handle to the decoder,
+  boolean decoded = JpegDec.decodeFsFile(filename);  // or we can pass the filename (leading / distinguishes SPIFFS files)
+                                                     // The filename can be a String or character array
+  if (decoded) {
+    // print information about the image to the serial port
+    jpegInfo();
+
+    // render the image onto the screen at given coordinates
+    jpegRender(xpos, ypos);
+  }
+  else {
+    Serial.println("Jpeg file format not supported!");
+  }
 }
 
 //====================================================================================
 //   Decode and paint onto the TFT screen
 //====================================================================================
-void renderJPEG(int xpos, int ypos) {
+void jpegRender(int xpos, int ypos) {
 
-  jpegInfo();
-  
+  // retrieve infomration about the image
   uint16_t  *pImg;
   uint16_t mcu_w = JpegDec.MCUWidth;
   uint16_t mcu_h = JpegDec.MCUHeight;
   uint32_t max_x = JpegDec.width;
   uint32_t max_y = JpegDec.height;
 
+  // Jpeg images are draw as a set of image block (tiles) called Minimum Coding Units (MCUs)
+  // Typically these MCUs are 16x16 pixel blocks
+  // Determine the width and height of the right and bottom edge image blocks
   uint32_t min_w = minimum(mcu_w, max_x % mcu_w);
   uint32_t min_h = minimum(mcu_h, max_y % mcu_h);
 
+  // save the current image block size
   uint32_t win_w = mcu_w;
   uint32_t win_h = mcu_h;
 
+  // record the current time so we can measure how long it takes to draw an image
   uint32_t drawTime = millis();
 
+  // save the coordinate of the right and bottom edges to assist image cropping
+  // to the screen size
   max_x += xpos;
   max_y += ypos;
 
+  // read each MCU block until there are no more
   while ( JpegDec.read()) {
 
+    // save a pointer to the image block
     pImg = JpegDec.pImage;
+
+    // calculate where the image block should be drawn on the screen
     int mcu_x = JpegDec.MCUx * mcu_w + xpos;
     int mcu_y = JpegDec.MCUy * mcu_h + ypos;
 
+    // check if the image block size needs to be changed for the right and bottom edges
     if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
     else win_w = min_w;
     if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
     else win_h = min_h;
 
+    // calculate how many pixels must be drawn
     uint32_t mcu_pixels = win_w * win_h;
 
-    if ( ( mcu_x + win_w) <= tft.width() && ( mcu_y + win_h) <= tft.height()) {
-
+    // draw image MCU block only if it will fit on the screen
+    if ( ( mcu_x + win_w) <= tft.width() && ( mcu_y + win_h) <= tft.height())
+	{
+      // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
       tft.setAddrWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
 
-      // Baboon40 draws in 731 ms
-      // Use this method with SWAP_BYTES commented out in User_Config.h (inside JPEGDecoder library)
-      while (mcu_pixels--) tft.pushColor(*pImg++); // Send to TFT 16 bits at a time
+      // Write all MCU pixels to the TFT window
+      while (mcu_pixels--) tft.pushColor(*pImg++); // Send MCU buffer to TFT 16 bits at a time
     }
 
+    // Stop drawing blocks if the bottom of the screen has been reached,
+    // the abort function will close the file
     else if ( ( mcu_y + win_h) >= tft.height()) JpegDec.abort();
 
   }
 
-  drawTime = millis() - drawTime; // Calculate the time it took
+  // calculate how long it took to draw the image
+  drawTime = millis() - drawTime;
 
+  // print the results to the serial port
   Serial.print  ("Total render time was    : "); Serial.print(drawTime); Serial.println(" ms");
   Serial.println("=====================================");
 
@@ -112,23 +120,22 @@ void renderJPEG(int xpos, int ypos) {
 //   Send time taken to Serial port
 //====================================================================================
 void jpegInfo() {
-
-  Serial.println("JPEG image info");
-  Serial.println("===============");
-  Serial.print("Width      :"); Serial.println(JpegDec.width);
-  Serial.print("Height     :"); Serial.println(JpegDec.height);
-  Serial.print("Components :"); Serial.println(JpegDec.comps);
-  Serial.print("MCU / row  :"); Serial.println(JpegDec.MCUSPerRow);
-  Serial.print("MCU / col  :"); Serial.println(JpegDec.MCUSPerCol);
-  Serial.print("Scan type  :"); Serial.println(JpegDec.scanType);
-  Serial.print("MCU width  :"); Serial.println(JpegDec.MCUWidth);
-  Serial.print("MCU height :"); Serial.println(JpegDec.MCUHeight);
-  Serial.println("===============");
-  Serial.println("");
+  Serial.println(F("==============="));
+  Serial.println(F("JPEG image info"));
+  Serial.println(F("==============="));
+  Serial.print(F(  "Width      :")); Serial.println(JpegDec.width);
+  Serial.print(F(  "Height     :")); Serial.println(JpegDec.height);
+  Serial.print(F(  "Components :")); Serial.println(JpegDec.comps);
+  Serial.print(F(  "MCU / row  :")); Serial.println(JpegDec.MCUSPerRow);
+  Serial.print(F(  "MCU / col  :")); Serial.println(JpegDec.MCUSPerCol);
+  Serial.print(F(  "Scan type  :")); Serial.println(JpegDec.scanType);
+  Serial.print(F(  "MCU width  :")); Serial.println(JpegDec.MCUWidth);
+  Serial.print(F(  "MCU height :")); Serial.println(JpegDec.MCUHeight);
+  Serial.println(F("==============="));
 }
 
 //====================================================================================
-//   Read a Jpeg file and dump it to the Serial port as a C array
+//   Open a Jpeg file and dump it to the Serial port as a C array
 //====================================================================================
 void createArray(const char *filename) {
 
@@ -142,7 +149,13 @@ void createArray(const char *filename) {
 
   uint8_t data;
   byte line_len = 0;
-
+  Serial.println("// Generated by a JPEGDecoder library example sketch:");
+  Serial.println("// https://github.com/Bodmer/JPEGDecoder");
+  Serial.println("");
+  Serial.println("#if defined(__AVR__)");
+  Serial.println("  #include <avr/pgmspace.h>");
+  Serial.println("#endif");
+  Serial.println("");
   Serial.print("const uint8_t ");
   while (*filename != '.') Serial.print(*filename++);
   Serial.println("[] PROGMEM = {"); // PROGMEM added for AVR processors, it is ignored by Due

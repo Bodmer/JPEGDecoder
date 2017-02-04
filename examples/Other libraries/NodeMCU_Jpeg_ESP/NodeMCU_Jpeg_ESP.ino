@@ -1,8 +1,8 @@
 /*====================================================================================
 
   This sketch demonstrates loading images which have been stored as files in the
-  built-in FLASH memory on a NodeMCU (ESP8266 based) rendering them on a TFT screen
-  that uses a ILI9341 driver chip with SPI interface.
+  built-in FLASH memory on a NodeMCU 1.0 (ESP8266 based, ESP-12E Module) rendering the
+  images onto a ILI9341 SPI 320 x 240 pixel TFT screen.
 
   The images are stored in the SPI FLASH Filing System (SPIFFS), which effectively
   functions like a tiny "hard drive". This filing system is built into the ESP8266
@@ -12,26 +12,26 @@
   The size of the SPIFFS partition can be set in the IDE as 1Mbyte or 3Mbytes. Either
   will work with this sketch. Typically most sketches easily fit within 1 Mbyte so a
   3 Mbyte SPIFS partition can be used, in which case it can contain ~18 full screen
-  320 x 240 raw images (150 Kbytes each).
+  320 x 240 raw images (150 Kbytes each) or 100's of Jpeg full screem images.
 
-  The NodeMCU, TFT and sketch works with TFT_ILI9341_ESP library here:
+  The NodeMCU, TFT and sketch works with the library here:
   https://github.com/Bodmer/TFT_ILI9341_ESP
 
-  Configure the SPI speed to 40MHz maximum in the User_Setup file within the
-  TFT_ILI9341_ESP library folder. It *may* work at 80MHz, but typically pixels get lost
-  or spurious extra pixels are plotted at very high SPI clock rates.
-
   The Jpeg library can be found here:
-   https://github.com/Bodmer/JPEGDecoder
+  https://github.com/Bodmer/JPEGDecoder
  
   Images in the Jpeg format can be created using Paint or IrfanView or other picture
   editting software.
 
   Place the images inside the sketch folder, in a folder called "Data".  Then upload
   all the files in the folder using the Arduino IDE "ESP8266 Sketch Data Upload" option
-  in the "Tools" menu.  This takes some time, but the SPIFFS content is not altered
-  when a new sketch is uploaded, so there is no need to upload the same files again!
-  Note: If open, you must close the "Serial Monitor" window for it to upload!
+  in the "Tools" menu:
+  http://www.esp8266.com/viewtopic.php?f=32&t=10081
+  https://github.com/esp8266/arduino-esp8266fs-plugin/releases
+  
+  This takes some time, but the SPIFFS content is not altered when a new sketch is
+  uploaded, so there is no need to upload the same files again!
+  Note: If open, you must close the "Serial Monitor" window to upload data to SPIFFS!
 
   The IDE will not copy the "data" folder with the sketch if you save the sketch under
   another name. It is necessary to manually make a copy and place it in the sketch
@@ -61,13 +61,8 @@
   in the TFT library User_Config.h file as negative so the library ignores it,
   e.g. TFT_RST -1
 
-  Created by Bodmer 14th Jan 2017 - Tested in Arduino IDE 1.8.0 esp8266 Core 2.3.0
+  Created by Bodmer 24th Jan 2017 - Tested in Arduino IDE 1.8.0 esp8266 Core 2.3.0
   ==================================================================================*/
-
-//====================================================================================
-//                                  Definitions
-//====================================================================================
-
 
 //====================================================================================
 //                                  Libraries
@@ -79,11 +74,17 @@
 // JPEG decoder library
 #include <JPEGDecoder.h>
 
-// Call up the TFT library
-#include <TFT_ILI9341_ESP.h> // Hardware-specific library
+// SPI library, built into IDE
+#include <SPI.h>
 
-// Invoke TFT library, pins and settings are defined in "User_Setup.h" in the library folder
-// See "User_Setup.h" for default hardware SPI pins (NodeMCU pin naming convention is used)
+// Call up the TFT library
+#include <TFT_ILI9341_ESP.h> // Hardware-specific library for ESP8266
+// The TFT control pins are set in the User_Setup.h file <<<<<<<<<<<<<<<<< NOTE!
+// that can be found in the "src" folder of the library
+
+#define TFT_BLACK 0
+
+// Invoke TFT library
 TFT_ILI9341_ESP tft = TFT_ILI9341_ESP();
 
 //====================================================================================
@@ -91,7 +92,10 @@ TFT_ILI9341_ESP tft = TFT_ILI9341_ESP();
 //====================================================================================
 void setup()
 {
-  Serial.begin(115200); // Used for messages
+  Serial.begin(250000); // Used for messages and the C array generator
+
+  delay(10);
+  Serial.println("NodeMCU decoder test!");
 
   tft.begin();
   tft.setRotation(0);  // 0 & 2 Portrait. 1 & 3 landscape
@@ -117,25 +121,25 @@ void loop()
   tft.setRotation(0);  // portrait
   tft.fillScreen(random(0xFFFF));
 
-  drawFSJpeg("/EagleEye.jpg", 0, 0);
-  delay(2000);
-
-  // This is quite a famous picture used for testing image compression algorithms
-  drawFSJpeg("/lena20k.jpg", 0, 0);
+  drawJpeg("/EagleEye.jpg", 0, 0);
   delay(2000);
 
   //tft.fillScreen(random(0xFFFF));
-  drawFSJpeg("/Baboon40.jpg", 0, 0);
+  drawJpeg("/BaboonP.jpg", 0, 0);
   delay(2000);
 
   tft.setRotation(1);  // landscape
   //tft.fillScreen(random(0xFFFF));
-  drawFSJpeg("/Mouse480.jpg", 0, 0);
+  drawJpeg("/Mouse.jpg", 0, 0);
   delay(2000);
 
   //tft.fillScreen(random(0xFFFF));
-  drawFSJpeg("/Baboon20.jpg", 0, 0);
+  drawJpeg("/BaboonL.jpg", 0, 0);
   delay(2000);
+
+  createArray("/EagleEye.jpg");
+  delay(2000);
+  while(1) yield(); // Stay here
 }
 //====================================================================================
 

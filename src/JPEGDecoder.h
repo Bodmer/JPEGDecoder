@@ -50,7 +50,8 @@ https://github.com/Bodmer/JPEGDecoder
 			#if defined (ARDUINO_ARCH_AVR)
 				#include <SD.h>    // For the Mega
 			#elif defined (ARDUINO_ARCH_SAM)
-				#include <SdFat.h> // For Due etc where we might need to bit bash the SPI
+				//#include <SdFat.h> // For Due etc where we might need to bit bash the SPI
+			    #include <SD.h>    // Alternative
 			#endif
 		#endif
 

@@ -1,5 +1,5 @@
 /*====================================================================================
-  This sketch contains support functions for the ESP6266 SPIFFS filinf system
+  This sketch contains support functions for the ESP6266 SPIFFS filing system
 
   Created by Bodmer 15th Jan 2017
   ==================================================================================*/

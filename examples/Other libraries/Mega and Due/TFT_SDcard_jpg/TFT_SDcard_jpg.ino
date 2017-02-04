@@ -146,8 +146,31 @@ void loop() {
 // xpos, ypos is top left corner of plotted image
 void drawSdJpeg(char *filename, int xpos, int ypos) {
 
-  JpegDec.decodeFile(filename);
-  renderJPEG(xpos, ypos);
+  // Open the named file (the Jpeg decoder library will close it)
+  File jpegFile = SD.open( filename, FILE_READ);  // or, file handle reference for SD library
+ 
+  if ( !jpegFile ) {
+    Serial.print("ERROR: File \""); Serial.print(filename); Serial.println ("\" not found!");
+    return;
+  }
+
+  Serial.println("===========================");
+  Serial.print("Drawing file: "); Serial.println(filename);
+  Serial.println("===========================");
+
+  // Use one of the following methods to initialise the decoder:
+  boolean decoded = JpegDec.decodeSdFile(jpegFile);  // Pass the SD file handle to the decoder,
+  //boolean decoded = JpegDec.decodeSdFile(filename);  // or pass the filename (String or character array)
+
+  if (decoded) {
+    // print information about the image to the serial port
+    jpegInfo();
+    // render the image onto the screen at given coordinates
+    jpegRender(xpos, ypos);
+  }
+  else {
+    Serial.println("Jpeg file format not supported!");
+  }
 }
 
 //####################################################################################################
@@ -155,7 +178,7 @@ void drawSdJpeg(char *filename, int xpos, int ypos) {
 //####################################################################################################
 // This function assumes xpos,ypos is a valid screen coordinate. For convenience images that do not
 // fit totally on the screen are cropped to the nearest MCU size and may leave right/bottom borders.
-void renderJPEG(int xpos, int ypos) {
+void jpegRender(int xpos, int ypos) {
 
   //jpegInfo(); // Print information from the JPEG file (could comment this line out)
 
