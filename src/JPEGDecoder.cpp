@@ -80,7 +80,7 @@ uint8_t JPEGDecoder::pjpeg_need_bytes_callback(uint8_t* pBuf, uint8_t buf_size, 
 	if (jpg_source == JPEG_FS_FILE) g_pInFileFs.read(pBuf,n); // else we are handling a file
 #endif
 
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	if (jpg_source == JPEG_SD_FILE) g_pInFileSd.read(pBuf,n); // else we are handling a file
 #endif
 
@@ -274,13 +274,13 @@ int JPEGDecoder::readSwappedBytes(void) {
 int JPEGDecoder::decodeFile(const char *pFilename){
 
 #ifdef ESP8266
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	if (*pFilename == '/')
 #endif
 	return decodeFsFile(pFilename);
 #endif
 
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	return decodeSdFile(pFilename);
 #endif
 
@@ -290,13 +290,13 @@ int JPEGDecoder::decodeFile(const char *pFilename){
 int JPEGDecoder::decodeFile(const String& pFilename){
 
 #ifdef ESP8266
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	if (pFilename.charAt(0) == '/')
 #endif
 	return decodeFsFile(pFilename);
 #endif
 
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	return decodeSdFile(pFilename);
 #endif
 
@@ -345,7 +345,7 @@ int JPEGDecoder::decodeFsFile(fs::File jpgFile) { // This is for the SPIFFS libr
 #endif
 
 
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 
 // Call specific to SD filing system in case leading / is used
 int JPEGDecoder::decodeSdFile(const char *pFilename) {
@@ -465,7 +465,7 @@ void JPEGDecoder::abort(void) {
 	if (jpg_source == JPEG_FS_FILE) if (g_pInFileFs) g_pInFileFs.close();
 #endif
 
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	if (jpg_source == JPEG_SD_FILE) if (g_pInFileSd) g_pInFileSd.close();
 #endif
 }

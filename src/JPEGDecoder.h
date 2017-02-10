@@ -23,19 +23,17 @@ https://github.com/Bodmer/JPEGDecoder
 		#include "arduino.h"
 		#include <pgmspace.h>
 
-// If the sketch has included FS.h without setting FS_NO_GLOBALS then it is likely
+// If the sketch has included FS.h without setting FS_NO_GLOBALS first then it is likely
 // there will be a redefinition of 'class fs::File' error due to conflict with the
 // SD library, so we can't load the SD library.
 		#if !defined (FS_NO_GLOBALS) && defined (FS_H)
 			#undef LOAD_SD_LIBRARY
+			#undef LOAD_SDFAT_LIBRARY
 		#endif
 
 		#ifdef ESP32  // SD library not compatible with ESP32
 			#undef LOAD_SD_LIBRARY
-		#endif
-
-		#ifdef LOAD_SD_LIBRARY
-			#include <SD.h>
+			#undef LOAD_SDFAT_LIBRARY // Compatibility untested
 		#endif
 
 		#ifndef ESP32  // ESP32 does not support SPIFFS yet
@@ -44,18 +42,16 @@ https://github.com/Bodmer/JPEGDecoder
 			#include <FS.h>
 		#endif
 
-	#else
-
-		#ifdef LOAD_SD_LIBRARY
-			#if defined (ARDUINO_ARCH_AVR)
-				#include <SD.h>    // For the Mega
-			#elif defined (ARDUINO_ARCH_SAM)
-				//#include <SdFat.h> // For Due etc where we might need to bit bash the SPI
-			    #include <SD.h>    // Alternative
-			#endif
-		#endif
-
 	#endif
+
+	#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
+		#ifdef LOAD_SDFAT_LIBRARY
+			#include <SdFat.h> // Alternative where we might need to bit bash the SPI
+		#else
+			#include <SD.h>    // Default
+		#endif
+	#endif
+
 	
 #include "picojpeg.h"
 

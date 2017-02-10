@@ -34,6 +34,10 @@
 
 // Images on SD Card must be put in the root folder (top level) to be found
 // Use the SdFat or SD library examples to verify your SD Card interface works!
+
+// Uncomment the #define LOAD_SDFAT_LIBRARY in User_Config.h in the JPEGDecoder src folder
+// if the Due is used with the SdFat library. SdFat allows bit bashing the SPI if needed.
+
 // The example images used to test this sketch can be found in the library
 // JPEGDecoder/extras folder
 //----------------------------------------------------------------------------------------------------
@@ -53,7 +57,7 @@
   TFT_HX8357 tft = TFT_HX8357(); // Invoke custom Mega library
 #elif defined (ARDUINO_ARCH_SAM)
   // Due libraries
-  #include <SdFat.h>             // Use the SdFat library for the Due
+  #include <SdFat.h>             // Use the SdFat library for the Due, see sketch header notes above
   SdFat SD;                      // Permit SD function call for the Due
   #include <TFT_HX8357_Due.h>    // Hardware-specific Due library
   TFT_HX8357_Due tft = TFT_HX8357_Due(); // Invoke custom Due library
