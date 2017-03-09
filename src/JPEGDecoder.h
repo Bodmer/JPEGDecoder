@@ -20,7 +20,7 @@ https://github.com/Bodmer/JPEGDecoder
 
 	#if defined (ESP8266) || defined (ESP32)
 
-		#include "arduino.h"
+		//#include "arduino.h"
 		#include <pgmspace.h>
 
 // If the sketch has included FS.h without setting FS_NO_GLOBALS first then it is likely
