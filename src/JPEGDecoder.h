@@ -75,7 +75,7 @@ typedef unsigned int uint;
 class JPEGDecoder {
 
 private:
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	File g_pInFileSd;
 #endif
 #ifdef LOAD_SPIFFS
@@ -126,7 +126,7 @@ public:
 	int decodeFile (const char *pFilename);
 	int decodeFile (const String& pFilename);
 	
-#ifdef LOAD_SD_LIBRARY
+#if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	int decodeSdFile (const char *pFilename);
 	int decodeSdFile (const String& pFilename);
 	int decodeSdFile (File g_pInFile);
