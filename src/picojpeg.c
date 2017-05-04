@@ -1778,12 +1778,14 @@ static void transformBlock(uint8 mcuBlock)
             }
             case 1:
             {
-               convertCb(0);
+               upsampleCbV(0, 0);
+               //convertCb(0); // Above line substituted by Bodmer
                break;
             }
             case 2:
             {
-               convertCr(0);
+               upsampleCrV(0, 0);
+               //convertCr(0); // Above line substituted by Bodmer
                break;
             }
          }
