@@ -1725,10 +1725,13 @@ static void convertCb(uint8 dstOfs)
       int16 cbG, cbB;
 
       cbG = ((cb * 88U) >> 8U) - 44U;
-      *pDstG++ = subAndClamp(pDstG[0], cbG);
+      pDstG[0] = subAndClamp(pDstG[0], cbG);
 
       cbB = (cb + ((cb * 198U) >> 8U)) - 227U;
-      *pDstB++ = addAndClamp(pDstB[0], cbB);
+      pDstB[0] = addAndClamp(pDstB[0], cbB);
+      
+      ++pDstG;
+      ++pDstB;
    }
 }
 /*----------------------------------------------------------------------------*/
@@ -1746,11 +1749,14 @@ static void convertCr(uint8 dstOfs)
       int16 crR, crG;
 
       crR = (cr + ((cr * 103U) >> 8U)) - 179;
-      *pDstR++ = addAndClamp(pDstR[0], crR);
+      pDstR[0] = addAndClamp(pDstR[0], crR);
 
       crG = ((cr * 183U) >> 8U) - 91;
-      *pDstG++ = subAndClamp(pDstG[0], crG);
-   }
+      pDstG[0] = subAndClamp(pDstG[0], crG);
+      
+      ++pDstR;
+      ++pDstG;
+      }
 }
 /*----------------------------------------------------------------------------*/
 static void transformBlock(uint8 mcuBlock)
@@ -1778,14 +1784,12 @@ static void transformBlock(uint8 mcuBlock)
             }
             case 1:
             {
-               upsampleCbV(0, 0);
-               //convertCb(0); // Above line substituted by Bodmer
+               convertCb(0);
                break;
             }
             case 2:
             {
-               upsampleCrV(0, 0);
-               //convertCr(0); // Above line substituted by Bodmer
+               convertCr(0);
                break;
             }
          }
