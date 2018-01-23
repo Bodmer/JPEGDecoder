@@ -36,10 +36,12 @@ https://github.com/Bodmer/JPEGDecoder
 			#undef LOAD_SDFAT_LIBRARY // Compatibility untested
 		#endif
 
-		#ifndef ESP32  // ESP32 does not support SPIFFS yet
-			#define LOAD_SPIFFS
-			#define FS_NO_GLOBALS
-			#include <FS.h>
+		#define LOAD_SPIFFS
+		#define FS_NO_GLOBALS
+		#include <FS.h>
+
+		#ifdef ESP32
+			#include "SPIFFS.h" // ESP32 only
 		#endif
 
 	#endif
