@@ -25,16 +25,16 @@ https://github.com/Bodmer/JPEGDecoder
 
 // If the sketch has included FS.h without setting FS_NO_GLOBALS first then it is likely
 // there will be a redefinition of 'class fs::File' error due to conflict with the
-// SD library, so we can't load the SD library.
-		#if !defined (FS_NO_GLOBALS) && defined (FS_H)
-			#undef LOAD_SD_LIBRARY
-			#undef LOAD_SDFAT_LIBRARY
-		#endif
+// SD library, so we can't load the SD library. (At 12/1/18 this appears to be fixed)
+		//#if !defined (FS_NO_GLOBALS) && defined (FS_H)
+			//#undef LOAD_SD_LIBRARY
+			//#undef LOAD_SDFAT_LIBRARY
+		//#endif
 
-		#ifdef ESP32  // SD library not compatible with ESP32
-			#undef LOAD_SD_LIBRARY
-			#undef LOAD_SDFAT_LIBRARY // Compatibility untested
-		#endif
+		//#ifdef ESP32  // SDFAT library not compatible with ESP32?
+			//#undef LOAD_SD_LIBRARY
+			//#undef LOAD_SDFAT_LIBRARY // Compatibility untested
+		//#endif
 
 		#define LOAD_SPIFFS
 		#define FS_NO_GLOBALS
@@ -69,6 +69,11 @@ enum {
 #ifndef jpg_min
 	#define jpg_min(a,b)     (((a) < (b)) ? (a) : (b))
 #endif
+
+#ifndef min
+  #define min(a,b) (((a) < (b)) ? (a) : (b))
+#endif
+
 //------------------------------------------------------------------------------
 typedef unsigned char uint8;
 typedef unsigned int uint;
