@@ -30,12 +30,12 @@ File jpegFile = SD.open( filename, FILE_READ);
 	
 
 #ifdef ESP8266
-    // Unomment out the next #define if you want the bytes swapped in the image blocks
+  // Uncomment out the next #define if you want the bytes swapped in the image blocks
 	// returned by read(). 
 
 	// Swapping the bytes is only needed to use the ESP8266 SPI library writePattern()
 	// member function and it is better to use readSwappedBytes() instead of read() in
-	// the sketch. Images will look pyscodelic with wrong colours if the SPI transmit byte
+	// the sketch. Images will look psychedelic with wrong colours if the SPI transmit byte
 	// order is not right for your sketch!
 	
 	// #define SWAP_BYTES // Deprecated, only included for backwards compatibility
