@@ -3,7 +3,7 @@ Arduino JPEGDecoder library
 
 This Arduino library supports the rendering of Jpeg files stored both on SD card and in arrays within program memory (FLASH) onto a TFT display. In addition images stored in the SPIFFS Flash filing system or "PROGMEM" arrays can be used with the ESP8266 processor. Use the ESP8266 board Core 2.3.0 in the Arduino IDE to avoid File definition conflicts if the SPIFFS and SD libraries are used together.
 
-The library works on the Arduino Mega, Arduino Due and ESP8266 (e.g. NodeMCU 1.0). Users have also reported success with the STM32 based processor boards.
+The library works on the Arduino Due, ESP32 and ESP8266 (e.g. NodeMCU 1.0). Users have also reported success with the STM32 based processor boards.
 
 Example images can be found in the "extras" folder.
 
@@ -11,7 +11,7 @@ High Jpeg compression ratios work best on images with smooth colour changes, how
 
 When storing the jpeg in a memory array bear in mind the Arduino has a maximum 32767 byte limit for the maximum size of an array (32 KBytes minus 1 byte).
 
-The decompression of Jpeg images needs more RAM than an UNO provides, thus this library is targetted at the Arduino Mega, Due and ESP8266 based boards.
+The decompression of Jpeg images needs more RAM than an UNO provides, thus this library is targetted at processors with more RAM. The library has been tested with Arduino Due and ESP8266/ESP32 based boards.
 
 The decompression of Jpegs involves a lot of maths, so it takes a Due about ~1.3s to render a fullscreen (480x320 pixel) image and the Mega will take ~5s to do the same. The time for smaller images will reduce roughly pro-rata with the total pixel count. An ESP8266 running at 160MHz and 40MHz SPI coupled to a 320x240 ILI9341 display can render a Jpeg in as little as 240ms.
 
@@ -21,9 +21,9 @@ The library has been tested with the 1.8.1 version of the Arduino IDE and may ge
 
 The library has been tested with 3.2" and 3.0" displays based on the HX8357B, HX8357C and ILI9481 driver chips with a 16 bit parallel interface.  Adapting the example sketch for other TFT drivers and their graphics libraries should be quite easy if they support either setWindow() or SetAddrWindow() and pushColor() functions as found in the Adafruit_GFX library.
 
-On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library! The Due will work fine with much bigger image sets in FLASH.
+On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library!  The Arduino Mega is not recommended as it does not reliably decode some jpeg images possibly due to a shortage of RAM.  The Due will work fine with much bigger image sets in FLASH.
 
-The ESP8266 has been tested with an ILI9341 library using the SPI interface, with Jpeg images stored in SPIFFS and in Flash arrays.
+The ESP8266 and ESP32 has been tested with an ILI9341 library using the SPI interface, with Jpeg images stored in SPIFFS and in Flash arrays.
 
 SD and SPIFFS filenames can be in String or character array format. File handles can also be used.
 
