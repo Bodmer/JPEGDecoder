@@ -50,7 +50,7 @@ JPEGDecoder::JPEGDecoder(){
 
 
 JPEGDecoder::~JPEGDecoder(){
-	if (pImage) delete pImage;
+	if (pImage) delete[] pImage;
 	pImage = NULL;
 }
 
@@ -427,14 +427,8 @@ int JPEGDecoder::decodeCommon(void) {
 	
 	row_pitch = image_info.m_MCUWidth;
 	pImage = new uint16_t[image_info.m_MCUWidth * image_info.m_MCUHeight];
-	if (!pImage) {
-		#ifdef DEBUG
-		Serial.println("Memory Allocation Failure");
-		#endif
 
-		return -1;
-	}
-	memset(pImage , 0 , sizeof(pImage));
+	memset(pImage , 0 , image_info.m_MCUWidth * image_info.m_MCUHeight * sizeof(*pImage));
 
 	row_blocks_per_mcu = image_info.m_MCUWidth >> 3;
 	col_blocks_per_mcu = image_info.m_MCUHeight >> 3;
@@ -458,7 +452,7 @@ void JPEGDecoder::abort(void) {
 	mcu_x = 0 ;
 	mcu_y = 0 ;
 	is_available = 0;
-	if(pImage) delete pImage;
+	if(pImage) delete[] pImage;
 	pImage = NULL;
 	
 #ifdef LOAD_SPIFFS
