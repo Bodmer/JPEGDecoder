@@ -407,6 +407,15 @@ int JPEGDecoder::decodeArray(const uint8_t array[], uint32_t  array_size) {
 
 int JPEGDecoder::decodeCommon(void) {
 
+	width = 0;
+	height = 0;
+	comps = 0;
+	MCUSPerRow = 0;
+	MCUSPerCol = 0;
+	scanType = (pjpeg_scan_type_t)0;
+	MCUWidth = 0;
+	MCUHeight = 0;
+
 	status = pjpeg_decode_init(&image_info, pjpeg_callback, NULL, 0);
 
 	if (status) {
@@ -419,7 +428,7 @@ int JPEGDecoder::decodeCommon(void) {
 		}
 		#endif
 
-		return -1;
+		return 0;
 	}
 
 	decoded_width =  image_info.m_width;
