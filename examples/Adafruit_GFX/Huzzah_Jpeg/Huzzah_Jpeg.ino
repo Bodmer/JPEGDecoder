@@ -108,7 +108,7 @@ void setup()
 void loop()
 {
   // Note the / before the SPIFFS file name must be present, this means the file is in
-  // the root directory of the SPIFFS, e.g. "/Tiger.rjpg" for a file called "Tiger.jpg"
+  // the root directory of the SPIFFS, e.g. "/Tiger.jpg" for a file called "Tiger.jpg"
 
   tft.setRotation(0);  // portrait
   tft.fillScreen(random(0xFFFF));

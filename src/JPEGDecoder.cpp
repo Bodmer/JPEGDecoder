@@ -65,7 +65,7 @@ uint8_t JPEGDecoder::pjpeg_callback(uint8_t* pBuf, uint8_t buf_size, uint8_t *pB
 uint8_t JPEGDecoder::pjpeg_need_bytes_callback(uint8_t* pBuf, uint8_t buf_size, uint8_t *pBytes_actually_read, void *pCallback_data) {
 	uint n;
 
-	pCallback_data;
+	//pCallback_data;
 
 	n = jpg_min(g_nInFileSize - g_nInFileOfs, buf_size);
 

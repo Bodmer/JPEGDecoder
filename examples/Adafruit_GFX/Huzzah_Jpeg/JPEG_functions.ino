@@ -82,23 +82,28 @@ void jpegRender(int xpos, int ypos) {
     int mcu_x = JpegDec.MCUx * mcu_w + xpos;
     int mcu_y = JpegDec.MCUy * mcu_h + ypos;
 
-    // check if the image block size needs to be changed for the right and bottom edges
+    // check if the image block size needs to be changed for the right edge
     if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
     else win_w = min_w;
+
+    // check if the image block size needs to be changed for the bottom edge
     if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
     else win_h = min_h;
 
-    // calculate how many pixels must be drawn
-    uint32_t mcu_pixels = win_w * win_h;
+    // copy pixels into a contiguous block
+    if (win_w != mcu_w)
+    {
+      for (int h = 1; h < win_h-1; h++)
+      {
+        memcpy(pImg + h * win_w, pImg + (h + 1) * mcu_w, win_w << 1);
+      }
+    }
+
 
     // draw image MCU block only if it will fit on the screen
     if ( ( mcu_x + win_w) <= tft.width() && ( mcu_y + win_h) <= tft.height())
-	{
-      // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
-      tft.setAddrWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
-
-      // Write all MCU pixels to the TFT window
-      while (mcu_pixels--) tft.pushColor(*pImg++); // Send MCU buffer to TFT 16 bits at a time
+    {
+      tft.drawRGBBitmap(mcu_x, mcu_y, pImg, win_w, win_h);
     }
 
     // Stop drawing blocks if the bottom of the screen has been reached,
