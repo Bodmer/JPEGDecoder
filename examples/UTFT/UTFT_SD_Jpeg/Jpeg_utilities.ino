@@ -125,7 +125,7 @@ void renderJPEG(int xpos, int ypos) {
         pImg++;                          // Increment pointer
         myGLCD.LCD_Write_DATA(col_h, col_l); // Send a pixel colour to window
       }
-      digitalWrite(TFT_CS, HIGH);  // Set chip select high to release contol
+      digitalWrite(TFT_CS, HIGH);  // Set chip select high to release control
     }
 
     // Stop drawing blocks if the bottom of the screen has been reached,

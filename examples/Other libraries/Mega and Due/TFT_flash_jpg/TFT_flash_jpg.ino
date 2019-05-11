@@ -8,7 +8,7 @@
 // The sketch does not need the SD or sdFat libraries since it does not access an
 // SD Card. You can edit the "User_Config.h" file inside the JPEGDecoder library folder
 // to stop the decode loading the SD or sdFat library.
-// See comments in "User_Config.h". Editting the User_Config.h file is optional
+// See comments in "User_Config.h". Editing the User_Config.h file is optional
 // and NOT essential but it will save some FLASH space.
 
 // Mega TFT library here:

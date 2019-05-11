@@ -22,7 +22,7 @@
   https://github.com/Bodmer/JPEGDecoder
  
   Images in the Jpeg format can be created using Paint or IrfanView or other picture
-  editting software.
+  editing software.
 
   Place the images inside the sketch folder, in a folder called "Data".  Then upload
   all the files in the folder using the Arduino IDE "ESP8266 Sketch Data Upload" option
