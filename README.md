@@ -13,7 +13,7 @@ Jpeg files in the "Progressive" format (where image data is compressed in multip
 
 High Jpeg compression ratios work best on images with smooth colour changes, however the Baboon40.jpg image at only 23.8 KBytes renders quite nicely. Typically a 480x320 image can be compressed without much degradation to less than 32 KBytes, in comparison a 24 bit BMP image would occupy 461 KBytes!  For comaprison the 480 x 320 Mouse480 image has been to compressed to a mere 6.45 Kbytes!
 
-When storing the jpeg in a memory array bear in mind the Arduino has a maximum 32767 byte limit for the maximum size of an array (32 KBytes minus 1 byte).
+When storing the jpeg in a memory array bear in mind the Arduino AVR processors (e.g. Mega2560 and Xmega) have a maximum 32767 byte limit for the maximum size of an array (32 KBytes minus 1 byte).
 
 The decompression of Jpeg images needs more RAM than an UNO provides, thus this library is targetted at processors with more RAM. The library has been tested with Arduino Due and ESP8266/ESP32 based boards.
 
@@ -25,7 +25,7 @@ The library has been tested with the 1.8.1 version of the Arduino IDE and may ge
 
 The library has been tested with 3.2" and 3.0" displays based on the HX8357B, HX8357C and ILI9481 driver chips with a 16 bit parallel interface.  Adapting the example sketch for other TFT drivers and their graphics libraries should be quite easy if they support either setWindow() or SetAddrWindow() and pushColor() functions as found in the Adafruit_GFX library.
 
-On a Mega the number of images stored in FLASH must be limited because it they are large enough to push the executable code start over the 64K 16 bit address limit then the Mega will fail to boot even though the sketch compiles and uploads correctly. This is a limitation imposed by the Arduino environment not this library!  The Arduino Mega is not recommended as it does not reliably decode some jpeg images possibly due to a shortage of RAM.  The Due will work fine with much bigger image sets in FLASH.
+The Arduino Mega is not recommended as it does not reliably decode some jpeg images possibly due to a shortage of RAM.  The Due will work fine with much bigger image sets in FLASH.
 
 The ESP8266 and ESP32 has been tested with an ILI9341 library using the SPI interface, with Jpeg images stored in SPIFFS and in Flash arrays.
 

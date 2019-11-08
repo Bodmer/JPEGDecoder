@@ -358,7 +358,8 @@ int JPEGDecoder::decodeSdFile(const char *pFilename) {
 
 int JPEGDecoder::decodeSdFile(const String& pFilename) {
 #if !defined (ARDUINO_ARCH_SAM)
-	File pInFile = SD.open( pFilename, FILE_READ);
+
+	File pInFile = SD.open( pFilename.c_str(), FILE_READ);
 
 	return decodeSdFile(pInFile);
 #else
