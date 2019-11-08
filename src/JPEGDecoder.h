@@ -21,6 +21,12 @@ https://github.com/Bodmer/JPEGDecoder
 
   #include "Arduino.h"
 
+  #ifdef __AVR__
+    #include <avr/pgmspace.h>
+    #undef PROGMEM
+    #define PROGMEM  __attribute__((section(".fini2")))
+  #endif
+
   #if defined (ESP8266) || defined (ESP32)
 
     //#include "arduino.h"
@@ -70,11 +76,7 @@ enum {
 
 //------------------------------------------------------------------------------
 #ifndef jpg_min
-  #define jpg_min(a,b)     (((a) < (b)) ? (a) : (b))
-#endif
-
-#ifndef min
-  #define min(a,b) (((a) < (b)) ? (a) : (b))
+  #define jpg_min(a,b) (((a) < (b)) ? (a) : (b))
 #endif
 
 //------------------------------------------------------------------------------
