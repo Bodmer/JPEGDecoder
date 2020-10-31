@@ -7,8 +7,6 @@
 // Return the minimum of two values a and b
 #define minimum(a,b)     (((a) < (b)) ? (a) : (b))
 
-#define USE_SPI_BUFFER // Comment out to use slower 16 bit pushColor()
-
 //====================================================================================
 //   Opens the image file and prime the Jpeg decoder
 //====================================================================================
@@ -21,7 +19,7 @@ void drawJpeg(const char *filename, int xpos, int ypos) {
   // Open the named file (the Jpeg decoder library will close it after rendering image)
   fs::File jpegFile = SPIFFS.open( filename, "r");    // File handle reference for SPIFFS
   //  File jpegFile = SD.open( filename, FILE_READ);  // or, file handle reference for SD library
- 
+
   if ( !jpegFile ) {
     Serial.print("ERROR: File \""); Serial.print(filename); Serial.println ("\" not found!");
     return;
@@ -31,7 +29,7 @@ void drawJpeg(const char *filename, int xpos, int ypos) {
   //boolean decoded = JpegDec.decodeFsFile(jpegFile); // Pass a SPIFFS file handle to the decoder,
   //boolean decoded = JpegDec.decodeSdFile(jpegFile); // or pass the SD file handle to the decoder,
   boolean decoded = JpegDec.decodeFsFile(filename);  // or pass the filename (leading / distinguishes SPIFFS files)
-                                   // Note: the filename can be a String or character array type
+  // Note: the filename can be a String or character array type
   if (decoded) {
     // print information about the image to the serial port
     jpegInfo();
@@ -76,7 +74,7 @@ void jpegRender(int xpos, int ypos) {
 
   // read each MCU block until there are no more
 #ifdef USE_SPI_BUFFER
-  while( JpegDec.readSwappedBytes()){ // Swap byte order so the SPI buffer can be used
+  while ( JpegDec.readSwappedBytes()) { // Swap byte order so the SPI buffer can be used
 #else
   while ( JpegDec.read()) { // Normal byte order read
 #endif
@@ -87,34 +85,30 @@ void jpegRender(int xpos, int ypos) {
     int mcu_x = JpegDec.MCUx * mcu_w + xpos;
     int mcu_y = JpegDec.MCUy * mcu_h + ypos;
 
-    // check if the image block size needs to be changed for the right and bottom edges
-    if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
-    else win_w = min_w;
-    if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
-    else win_h = min_h;
+    if ( mcu_y < tft.height() )
+    {
+      // check if the image block size needs to be changed for the right edge
+      if (mcu_x + mcu_w <= max_x) win_w = mcu_w;
+      else win_w = min_w;
 
-    // calculate how many pixels must be drawn
-    uint32_t mcu_pixels = win_w * win_h;
+      // check if the image block size needs to be changed for the bottom edge
+      if (mcu_y + mcu_h <= max_y) win_h = mcu_h;
+      else win_h = min_h;
 
-    // draw image MCU block only if it will fit on the screen
-    if ( ( mcu_x + win_w) <= tft.width() && ( mcu_y + win_h) <= tft.height())
-	{
-#ifdef USE_SPI_BUFFER
-      // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
-      tft.setWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
-      // Write all MCU pixels to the TFT window
-      uint8_t *pImg8 = (uint8_t*)pImg;     // Convert 16 bit pointer to an 8 bit pointer
-      tft.pushColors(pImg8, mcu_pixels*2); // Send bytes via 64 byte SPI port buffer
-#else
-      // Now set a MCU bounding window on the TFT to push pixels into (x, y, x + width - 1, y + height - 1)
-      tft.setAddrWindow(mcu_x, mcu_y, mcu_x + win_w - 1, mcu_y + win_h - 1);
-      // Write all MCU pixels to the TFT window
-      while (mcu_pixels--) tft.pushColor(*pImg++);
-#endif
+      // copy pixels into a smaller block
+      if (win_w != mcu_w)
+      {
+        for (int h = 1; h < win_h; h++)
+        {
+          memcpy(pImg + h * win_w, pImg + h * mcu_w, win_w << 1);
+        }
+      }
+      tft.pushImage(mcu_x, mcu_y, win_w, win_h, pImg);
     }
-
-    else if ( ( mcu_y + win_h) >= tft.height()) JpegDec.abort();
-
+    else
+    {
+      JpegDec.abort();
+    }
   }
 
   // calculate how long it took to draw the image
@@ -154,7 +148,7 @@ void createArray(const char *filename) {
   // Open the named file
   fs::File jpgFile = SPIFFS.open( filename, "r");    // File handle reference for SPIFFS
   //  File jpgFile = SD.open( filename, FILE_READ);  // or, file handle reference for SD library
- 
+
   if ( !jpgFile ) {
     Serial.print("ERROR: File \""); Serial.print(filename); Serial.println ("\" not found!");
     return;

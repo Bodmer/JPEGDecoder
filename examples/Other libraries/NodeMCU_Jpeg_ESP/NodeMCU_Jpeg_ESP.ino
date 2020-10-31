@@ -4,18 +4,17 @@
   built-in FLASH memory on a NodeMCU 1.0 (ESP8266 based, ESP-12E Module) rendering the
   images onto a ILI9341 SPI 320 x 240 pixel TFT screen.
 
-  The images are stored in the SPI FLASH Filing System (SPIFFS), which effectively
+  Images are stored in the SPI FLASH Filing System (SPIFFS), which effectively
   functions like a tiny "hard drive". This filing system is built into the ESP8266
   Core that can be loaded from the IDE "Boards manager" menu option. This is at
   version 2.3.0 at the time of sketch creation.
 
-  The size of the SPIFFS partition can be set in the IDE as 1Mbyte or 3Mbytes. Either
-  will work with this sketch. Typically most sketches easily fit within 1 Mbyte so a
-  3 Mbyte SPIFS partition can be used, in which case it can contain ~18 full screen
-  320 x 240 raw images (150 Kbytes each) or 100's of Jpeg full screem images.
+  The size of the SPIFFS partition can be set in the IDE. Typically most sketches
+  easily fit within 1 Mbyte so a 3 Mbyte SPIFS partition can be used, in which
+  case it can contain 100's of Jpeg full screem images.
 
   The NodeMCU, TFT and sketch works with the library here:
-  https://github.com/Bodmer/TFT_ILI9341_ESP
+  https://github.com/Bodmer/TFT_eSPI
 
   The Jpeg library can be found here:
   https://github.com/Bodmer/JPEGDecoder
@@ -32,10 +31,6 @@
   This takes some time, but the SPIFFS content is not altered when a new sketch is
   uploaded, so there is no need to upload the same files again!
   Note: If open, you must close the "Serial Monitor" window to upload data to SPIFFS!
-
-  The IDE will not copy the "data" folder with the sketch if you save the sketch under
-  another name. It is necessary to manually make a copy and place it in the sketch
-  folder.
 
   This sketch includes example images in the Data folder.
 
@@ -61,7 +56,7 @@
   in the TFT library User_Config.h file as negative so the library ignores it,
   e.g. TFT_RST -1
 
-  Created by Bodmer 24th Jan 2017 - Tested in Arduino IDE 1.8.0 esp8266 Core 2.3.0
+  Created by Bodmer 24th Jan 2017 - Tested in Arduino IDE 1.8.13 esp8266 Core 2.7.4
   ==================================================================================*/
 
 //====================================================================================
@@ -78,14 +73,12 @@
 #include <SPI.h>
 
 // Call up the TFT library
-#include <TFT_ILI9341_ESP.h> // Hardware-specific library for ESP8266
+#include <TFT_eSPI.h> // Hardware-specific library for ESP8266
 // The TFT control pins are set in the User_Setup.h file <<<<<<<<<<<<<<<<< NOTE!
 // that can be found in the "src" folder of the library
 
-#define TFT_BLACK 0
-
 // Invoke TFT library
-TFT_ILI9341_ESP tft = TFT_ILI9341_ESP();
+TFT_eSPI tft = TFT_eSPI();
 
 //====================================================================================
 //                                    Setup
@@ -116,30 +109,15 @@ void setup()
 void loop()
 {
   // Note the / before the SPIFFS file name must be present, this means the file is in
-  // the root directory of the SPIFFS, e.g. "/Tiger.rjpg" for a file called "Tiger.jpg"
-
-  tft.setRotation(0);  // portrait
-  tft.fillScreen(random(0xFFFF));
-
-  drawJpeg("/EagleEye.jpg", 0, 0);
-  delay(2000);
-
-  //tft.fillScreen(random(0xFFFF));
-  drawJpeg("/BaboonP.jpg", 0, 0);
-  delay(2000);
+  // the root directory of the SPIFFS, e.g. "/Tiger.jpg"
 
   tft.setRotation(1);  // landscape
-  //tft.fillScreen(random(0xFFFF));
-  drawJpeg("/Mouse.jpg", 0, 0);
-  delay(2000);
+  tft.fillScreen(random(0xFFFF));
 
   //tft.fillScreen(random(0xFFFF));
   drawJpeg("/BaboonL.jpg", 0, 0);
   delay(2000);
 
-  createArray("/EagleEye.jpg");
-  delay(2000);
   while(1) yield(); // Stay here
 }
 //====================================================================================
-
