@@ -3,7 +3,7 @@ Arduino JPEGDecoder library
 
 News: October 2019 - *I have created a new Arduino compatible [Jpeg decoder library here.](https://github.com/Bodmer/TJpg_Decoder) This new library is based on TinyJpegDec, this is 60% faster on 32bit processors, it also has a much simpler interface.*
 
-This Arduino library supports the rendering of Jpeg files stored both on SD card and in arrays within program memory (FLASH) onto a TFT display. In addition images stored in the SPIFFS (or LittleFS) Flash filing system or "PROGMEM" arrays can be used with the ESP8266 processor. Use the ESP8266 board Core 2.3.0 in the Arduino IDE to avoid File definition conflicts if the SPIFFS and SD libraries are used together.
+This Arduino library supports the rendering of Jpeg files stored both on SD card and in arrays within program memory (FLASH) onto a TFT display. In addition images stored in the SPIFFS (or LittleFS) Flash filing system or "PROGMEM" arrays can be used with the ESP8266 and ESP32 processors. For the ESP8266 use board Core 2.3.0 (or later) in the Arduino IDE to avoid File definition conflicts if the SPIFFS and SD libraries are used together.
 
 The library works on the Arduino Due, ESP32 and ESP8266 (e.g. NodeMCU 1.0). Users have also reported success with the STM32 based processor boards.
 
