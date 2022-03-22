@@ -9,7 +9,7 @@ The library works on the Arduino Due, ESP32 and ESP8266 (e.g. NodeMCU 1.0). User
 
 Example images can be found in the "extras" folder.
 
-Jpeg files in the "Progressive" format (where image data is compressed in multiple passes with progressively higher detail) are not supported since this would require much more memory, or too many Inverse Discrete Cosine Transform's for typical embedded systems.
+Jpeg files must be in 24bit format (8 bit not supported). Jpeg files in the "Progressive" format (where image data is compressed in multiple passes with progressively higher detail) are not supported either since this would require much more memory.
 
 High Jpeg compression ratios work best on images with smooth colour changes, however the Baboon40.jpg image at only 23.8 KBytes renders quite nicely. Typically a 480x320 image can be compressed without much degradation to less than 32 KBytes, in comparison a 24 bit BMP image would occupy 461 KBytes!  For comaprison the 480 x 320 Mouse480 image has been to compressed to a mere 6.45 Kbytes!
 
