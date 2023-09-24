@@ -8,7 +8,7 @@
 //====================================================================================
 //                 Print a SPIFFS directory list (root directory)
 //====================================================================================
-#ifdef ESP8266
+#ifdef ARDUINO_ARCH_ESP8266
 void listFiles(void) {
   Serial.println();
   Serial.println("SPIFFS files found:");

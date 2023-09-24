@@ -27,32 +27,31 @@ https://github.com/Bodmer/JPEGDecoder
     #define PROGMEM  __attribute__((section(".fini2")))
   #endif
 
-  #if defined (ESP8266) || defined (ESP32)
+  #ifdef ESP32  // SDFAT library not compatible with ESP32
+    //#undef LOAD_SD_LIBRARY
+    #undef LOAD_SDFAT_LIBRARY
+  #endif
 
-    //#include "arduino.h"
+  // New ESP8266 board package uses ARDUINO_ARCH_ESP8266
+  // old package defined ESP8266
+  #if defined (ESP8266)
+    #ifndef ARDUINO_ARCH_ESP8266
+      #define ARDUINO_ARCH_ESP8266
+    #endif
+  #endif
+
+  #if defined (ARDUINO_ARCH_ESP8266) || defined (ESP32)
+    #define LOAD_FLASH_FS
     #include <pgmspace.h>
-
-// If the sketch has included FS.h without setting FS_NO_GLOBALS first then it is likely
-// there will be a redefinition of 'class fs::File' error due to conflict with the
-// SD library, so we can't load the SD library. (At 12/1/18 this appears to be fixed)
-    //#if !defined (FS_NO_GLOBALS) && defined (FS_H)
-      //#undef LOAD_SD_LIBRARY
-      //#undef LOAD_SDFAT_LIBRARY
-    //#endif
-
-    #ifdef ESP32  // SDFAT library not compatible with ESP32
-      //#undef LOAD_SD_LIBRARY
-      #undef LOAD_SDFAT_LIBRARY
-    #endif
-
-    #define LOAD_SPIFFS
-    #define FS_NO_GLOBALS
     #include <FS.h>
-
-    #ifdef ESP32
-      #include "SPIFFS.h" // ESP32 only
-    #endif
-
+    #include <LittleFS.h>
+    #define SPIFFS LittleFS
+  #elif defined (ARDUINO_ARCH_RP2040)
+    #define LOAD_FLASH_FS
+    #include <FS.h>
+    #include <LittleFS.h>
+    #define SPIFFS LittleFS
+    #define TJPGD_LOAD_FFS
   #endif
 
   #if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
@@ -90,7 +89,7 @@ private:
 #if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
   File g_pInFileSd;
 #endif
-#ifdef LOAD_SPIFFS
+#ifdef LOAD_FLASH_FS
   fs::File g_pInFileFs;
 #endif
   pjpeg_scan_type_t scan_type;
@@ -144,7 +143,7 @@ public:
   int decodeSdFile (File g_pInFile);
 #endif
 
-#ifdef LOAD_SPIFFS
+#ifdef LOAD_FLASH_FS
   int decodeFsFile (const char *pFilename);
   int decodeFsFile (const String& pFilename);
   int decodeFsFile (fs::File g_pInFile);

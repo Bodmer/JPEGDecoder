@@ -29,7 +29,7 @@ File jpegFile = SD.open( filename, FILE_READ);
 // duplicate definitions in the SD library and the SPIFFS library.
 	
 
-#ifdef ESP8266
+#ifdef ARDUINO_ARCH_ESP8266
   // Uncomment out the next #define if you want the bytes swapped in the image blocks
 	// returned by read(). 
 
@@ -38,5 +38,5 @@ File jpegFile = SD.open( filename, FILE_READ);
 	// the sketch. Images will look psychedelic with wrong colours if the SPI transmit byte
 	// order is not right for your sketch!
 	
-	// #define SWAP_BYTES // Deprecated, only included for backwards compatibility
+	 #define SWAP_BYTES // Deprecated, only included for backwards compatibility
 #endif

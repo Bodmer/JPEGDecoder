@@ -34,6 +34,8 @@ Bodmer (20/1/17): Prevent deleting the pImage pointer twice (causes an exception
 				tidy up code.
 
 Bodmer (24/1/17): Correct greyscale images, update examples
+
+Bodmer (26/2/22): Removed deprecated SPIFFS
 */
 
 #include "JPEGDecoder.h"
@@ -65,18 +67,18 @@ uint8_t JPEGDecoder::pjpeg_callback(uint8_t* pBuf, uint8_t buf_size, uint8_t *pB
 uint8_t JPEGDecoder::pjpeg_need_bytes_callback(uint8_t* pBuf, uint8_t buf_size, uint8_t *pBytes_actually_read, void *pCallback_data) {
 	uint n;
 
-	//pCallback_data;
+	pCallback_data = pCallback_data; // Supress warning
 
 	n = jpg_min(g_nInFileSize - g_nInFileOfs, buf_size);
 
 	if (jpg_source == JPEG_ARRAY) { // We are handling an array
-		for (int i = 0; i < n; i++) {
+		for (uint i = 0; i < n; i++) {
 			pBuf[i] = pgm_read_byte(jpg_data++);
 			//Serial.println(pBuf[i],HEX);
 		}
 	}
 
-#ifdef LOAD_SPIFFS
+#ifdef LOAD_FLASH_FS
 	if (jpg_source == JPEG_FS_FILE) g_pInFileFs.read(pBuf,n); // else we are handling a file
 #endif
 
@@ -270,10 +272,10 @@ int JPEGDecoder::readSwappedBytes(void) {
 }
 
 
-// Generic file call for SD or SPIFFS, uses leading / to distinguish SPIFFS files
+// Generic file call for SD or Little_FS, uses leading / to distinguish Little_FS files
 int JPEGDecoder::decodeFile(const char *pFilename){
 
-#if defined (ESP8266) || defined (ESP32)
+#if defined (ARDUINO_ARCH_ESP8266) || defined (ESP32)
 #if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	if (*pFilename == '/')
 #endif
@@ -289,7 +291,7 @@ int JPEGDecoder::decodeFile(const char *pFilename){
 
 int JPEGDecoder::decodeFile(const String& pFilename){
 
-#if defined (ESP8266) || defined (ESP32)
+#if defined (ARDUINO_ARCH_ESP8266) || defined (ESP32)
 #if defined (LOAD_SD_LIBRARY) || defined (LOAD_SDFAT_LIBRARY)
 	if (pFilename.charAt(0) == '/')
 #endif
@@ -304,32 +306,32 @@ int JPEGDecoder::decodeFile(const String& pFilename){
 }
 
 
-#ifdef LOAD_SPIFFS
+#ifdef LOAD_FLASH_FS
 
-// Call specific to SPIFFS
+// Call specific to Little_FS
 int JPEGDecoder::decodeFsFile(const char *pFilename) {
 
-	fs::File pInFile = SPIFFS.open( pFilename, "r");
+	fs::File pInFile = LittleFS.open( pFilename, "r");
 
 	return decodeFsFile(pInFile);
 }
 
 int JPEGDecoder::decodeFsFile(const String& pFilename) {
 
-	fs::File pInFile = SPIFFS.open( pFilename, "r");
+	fs::File pInFile = LittleFS.open( pFilename, "r");
 
 	return decodeFsFile(pInFile);
 }
 
-int JPEGDecoder::decodeFsFile(fs::File jpgFile) { // This is for the SPIFFS library
+int JPEGDecoder::decodeFsFile(fs::File jpgFile) { // This is for the Little_FS library
 
 	g_pInFileFs = jpgFile;
 
-	jpg_source = JPEG_FS_FILE; // Flag to indicate a SPIFFS file
+	jpg_source = JPEG_FS_FILE; // Flag to indicate a Little_FS file
 
 	if (!g_pInFileFs) {
 		#ifdef DEBUG
-		Serial.println("ERROR: SPIFFS file not found!");
+		Serial.println("ERROR: Little_FS file not found!");
 		#endif
 
 		return -1;
@@ -465,7 +467,7 @@ void JPEGDecoder::abort(void) {
 	if(pImage) delete[] pImage;
 	pImage = NULL;
 	
-#ifdef LOAD_SPIFFS
+#ifdef LOAD_FLASH_FS
 	if (jpg_source == JPEG_FS_FILE) if (g_pInFileFs) g_pInFileFs.close();
 #endif
 
